@@ -1,0 +1,24 @@
+{{define "head"}}<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>{{if .Title}}{{.Title}}{{else}}Saarthi{{end}}</title>
+  <meta name="description" content="Rent scooters, bikes, cars, EVs and cycles from local shops. The price you see is the whole price.">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#FAF8F3" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#1B1A18" media="(prefers-color-scheme: dark)">
+  <meta name="htmx-config" content='{"includeIndicatorStyles":false,"allowEval":false,"globalViewTransitions":false,"historyCacheSize":0}'>
+  <link rel="icon" href="{{asset "/static/img/favicon.svg"}}" type="image/svg+xml">
+  <link rel="preload" href="/static/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/static/fonts/fraunces-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="{{asset "/static/css/tokens.css"}}">
+  <link rel="stylesheet" href="{{asset "/static/css/app.css"}}">
+  {{block "head-extra" .}}{{end}}
+</head>{{end}}
+
+{{define "scripts"}}
+  <script src="{{asset "/static/vendor/htmx.min.js"}}" defer></script>
+  <script src="{{asset "/static/js/app.js"}}" type="module"></script>
+  {{block "page-scripts" .}}{{end}}
+{{end}}
+
+{{define "html-attrs"}} lang="en-IN" data-theme-choice="{{.Theme}}"{{if eq .Theme "dark"}} data-theme="dark"{{else if eq .Theme "light"}} data-theme="light"{{end}}{{end}}

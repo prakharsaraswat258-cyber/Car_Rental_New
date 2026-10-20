@@ -1,0 +1,36 @@
+# DECISIONS — Saarthi LITE
+
+Short log of choices made while building. Newest at the bottom. The old (non-LITE) plan is scrapped; numbering restarts.
+
+| # | Decision | Why |
+|---|---|---|
+| D-001 | Stack: Go stdlib `net/http` (1.22 patterns), `html/template`, `embed`; htmx 2; vanilla JS modules; Motion (vanilla) for springs; Leaflet for maps. No Node, no bundler. | Only Go may be installed. One binary, one command. |
+| D-002 | SQLite via `modernc.org/sqlite` (pure Go). One file `data/saarthi.db`. WAL, `busy_timeout=5000`, `foreign_keys=ON`, `_txlock=immediate` so every write tx starts with `BEGIN IMMEDIATE`. | No CGO / gcc. IMMEDIATE tx makes the overlap check + insert atomic. |
+| D-003 | Schema is `CREATE ... IF NOT EXISTS`, embedded and run on every start. No migration tool. Schema change during the build → `go run ./cmd/saarthi -reset`. | Demo app, data is reseedable. |
+| D-004 | IDs: 16 random bytes, hex. Booking code: `SAR-` + 5 chars from `23456789ABCDEFGHJKMNPQRSTVWXYZ`, retried on collision. | Spec §3. Alphabet drops look-alike characters. |
+| D-005 | Money is `int64` paise everywhere. Displayed with Indian grouping (`₹1,23,456`); paise shown only when non-zero (`₹141.60`). | No float rounding bugs. |
+| D-006 | Times stored as UTC text in one fixed layout `2006-01-02T15:04:05Z`, so string comparison in SQL is chronological. Shown in IST via `time.FixedZone("IST", +5:30)`. | India has no DST, so a fixed zone is exact and needs no tzdata on Windows. |
+| D-007 | Sessions: 32 random bytes → hex token in `sessions`, cookie `saarthi_session`, HttpOnly, SameSite=Lax, 30 days, `Secure` only when served over TLS. POST/DELETE with a foreign `Origin` are rejected. | Cheap CSRF defence on top of SameSite=Lax. |
+| D-008 | Theme cookie `theme` = `light` / `dark` / `system`. Server writes `data-theme` on `<html>` for light/dark; `system` writes nothing and CSS follows `prefers-color-scheme`. | No flash, no inline script. |
+| D-009 | An unpaid `pending_payment` booking holds its slot for 15 minutes (was D-014 in the old plan). Expiry is lazy: availability/booking reads first run one `UPDATE ... SET status='expired'` for stale rows. | No background worker. |
+| D-010 | Overlap is half-open: `existing.start < new.end AND new.start < existing.end`. Blocking statuses: unexpired `pending_payment`, `awaiting_shop`, `confirmed`, `ready`, `active`. Blocks always block. `returned` / `closed` / `cancelled` / `declined` / `expired` do not. | Touching ranges are fine (spec §3). A returned vehicle is back with the shop. |
+| D-011 | Deposit `released` flips to `credited` 1 minute after `released_at`, lazily on read. | Lets the coin journey finish during a demo. |
+| D-012 | Demo mode: no real-time waits. Check-in allowed any time once `ready`; inspection any time after `returned`. | Spec §2. |
+| D-013 | Added `cities.aliases` (spec only had it on areas) so "abu" → Mount Abu and "goa" match at city level. | Parser needs city aliases too. |
+| D-014 | Added `addons.fits` (comma list of vehicle classes `two_wheeler` / `four_wheeler` / `cycle`; empty = all). Class comes from `domain.ClassOf(type, seats)`: cycle → cycle, ≥ 4 seats → four_wheeler, else two_wheeler. Helmet → two-wheelers; child seat → four-wheelers. | A child seat on a scooter bill looks broken. Type alone fails for EVs (Ather scooter vs Nexon car). |
+| D-015 | Seed vehicles have no `vehicle_photos` rows; cards fall back to the per-type SVG silhouette. `rating_avg` / `rating_count` are seeded as history; only real bookings create `reviews` rows. | Spec §5: original line-art for seed data. |
+| D-016 | Seed dates are relative to the first run. Stale demo after a few days → `-reset`. | Keeps "today" screens meaningful. |
+| D-017 | Search shows only `live` vehicles of `verified` shops. The pending demo shop's vehicles appear after the admin verifies it. | Makes the admin verify step visible in the demo. |
+| D-018 | Map tiles: CARTO Positron (light) / Dark Matter (dark) raster tiles with attribution. Needs internet; without it the list still works. | Leaflet is vendored, tiles cannot be. |
+| D-019 | Templates and static files are embedded. `-dev` reads `./web` from disk and re-parses templates per request (edit → refresh, no rebuild). | Fast frontend iteration with zero tooling. |
+| D-020 | Tax: 18% (GST) on rent + add-ons, never on the deposit. Rounded half-up in paise. | Spec §4. |
+| D-021 | Late fee: 30 min grace, then each started hour. Extra km from odometer delta minus included km. All deductions together capped at the deposit. | Spec §4. |
+| D-022 | Renter 6-step status line maps: Confirmed=`confirmed`, Ready for pickup=`ready`, Checked in=`ready` + all check-in photos, On trip=`active`, Returned=`returned`, Closed=`closed`. `awaiting_shop` shows the amber "Waiting for the shop" state before step 1. | Spec lists no `checked_in` status; it is derived. |
+| D-023 | Status transitions live in one table in `internal/domain` with the actor allowed to fire each (renter / provider / system). Handlers call `domain.CanTransition` and never set status freely. | One place to test allowed and forbidden moves. |
+| D-024 | Renderer lives in `internal/handlers` (render.go). Pages pick a layout by folder: `pages/provider/*`, `pages/admin/*` → console layout; everything else → app layout. htmx requests (not boosted) get only the `content` block. | Keeps the CLAUDE.md layout, no extra packages. |
+| D-025 | CSP: `script-src 'self'` (no inline scripts, no `hx-on`, no `js:` in `hx-vals`), `style-src 'self' 'unsafe-inline'`, images also from CARTO tiles. | Cheap XSS backstop. |
+| D-026 | Seed trip photos are generated JPEG gradients (stdlib `image/jpeg`) written to `data/uploads/` at seed time. | Active / returned demo trips need proof photos to show. |
+| D-027 | Static assets linked from templates get `?v=<content hash>` and cache forever. Everything else (ES module imports, fonts named in CSS) is `no-cache` with a content-hash ETag, so revalidation is a cheap 304. `-dev` never caches. | Instant reloads, no stale CSS or JS modules. |
+| D-028 | Go lives on D: (`D:\Go`), with GOPATH, GOCACHE, GOMODCACHE and GOTMPDIR on D: too. Build and test commands run with `TMP`/`TEMP` = `D:\GoTmp` so `t.TempDir()` stays off C:. Only Go's settings file (`%APPDATA%\go\env`) is on C:. | C: has ~15 GB free; Go caches grow to several GB. |
+| D-029 | Motion pinned to 12.43.0 (vanilla UMD, global `Motion`), not 14.x. htmx pinned to 2.0.11 (the `latest` tag; 4.0 is beta). | Known, stable APIs; the spec asks for htmx 2. |
+| D-030 | `go.mod` says `go 1.26.0` (raised by `go get` because modernc.org/sqlite needs it). Installed toolchain is 1.27.0. | Not a choice so much as a floor. |

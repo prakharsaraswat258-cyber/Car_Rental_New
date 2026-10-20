@@ -1,0 +1,47 @@
+{{/* Shared page chrome: top bar, bottom tabs, theme switch, footer. */}}
+
+{{define "topbar"}}
+<header class="topbar">
+  <div class="container topbar-inner">
+    {{template "brand"}}
+    <nav class="topnav" aria-label="Main">
+      <a href="/" {{if eq .Path "/"}}aria-current="page"{{end}}>{{icon "compass"}}Explore</a>
+      <a href="/trips" {{if eq .Path "/trips"}}aria-current="page"{{end}}>{{icon "route"}}Trips</a>
+      {{if .User}}{{if .User.IsProvider}}<a href="/p">{{icon "store"}}My shop</a>{{end}}{{if .User.IsAdmin}}<a href="/admin">{{icon "layout-dashboard"}}Admin</a>{{end}}{{end}}
+    </nav>
+    <div class="topbar-end">
+      {{template "theme-switch" .}}
+      {{if .User}}
+        <span class="small muted" title="{{.User.Email}}">{{.User.FirstName}}</span>
+      {{else}}
+        <a class="btn btn-secondary btn-sm" href="/login">Log in</a>
+      {{end}}
+    </div>
+  </div>
+</header>
+{{end}}
+
+{{define "tabbar"}}
+<nav class="tabbar" aria-label="Main">
+  <a href="/" {{if eq .Path "/"}}aria-current="page"{{end}}>{{icon "compass"}}<span>Explore</span></a>
+  <a href="/trips" {{if eq .Path "/trips"}}aria-current="page"{{end}}>{{icon "route"}}<span>Trips</span></a>
+  <a href="{{if .User}}/account{{else}}/login{{end}}" {{if eq .Path "/account"}}aria-current="page"{{end}}>{{icon "circle-user"}}<span>Account</span></a>
+</nav>
+{{end}}
+
+{{/* Works without JS (form POST); theme.js upgrades it to an instant switch. */}}
+{{define "theme-switch"}}
+<form class="theme-switch" method="post" action="/theme" data-theme-switch aria-label="Theme">
+  <button type="submit" name="theme" value="light" aria-pressed="{{if eq .Theme "light"}}true{{else}}false{{end}}" title="Light">{{icon "sun"}}<span class="sr-only">Light</span></button>
+  <button type="submit" name="theme" value="dark" aria-pressed="{{if eq .Theme "dark"}}true{{else}}false{{end}}" title="Dark">{{icon "moon"}}<span class="sr-only">Dark</span></button>
+  <button type="submit" name="theme" value="system" aria-pressed="{{if eq .Theme "system"}}true{{else}}false{{end}}" title="Match my device">{{icon "monitor"}}<span class="sr-only">Match my device</span></button>
+</form>
+{{end}}
+
+{{define "footer"}}
+<footer class="site-footer">
+  <div class="container">
+    <p>Saarthi is a demo. Payments, SMS and email are simulated. Vehicle art is original line-work.</p>
+  </div>
+</footer>
+{{end}}

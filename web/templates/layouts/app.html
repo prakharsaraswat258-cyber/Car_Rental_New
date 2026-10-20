@@ -1,0 +1,15 @@
+{{/* Renter layout: top bar on desktop, bottom tabs on mobile. */}}
+{{define "app"}}<!doctype html>
+<html{{template "html-attrs" .}}>
+{{template "head" .}}
+<body class="layout-app">
+  <a class="skip-link" href="#main">Skip to content</a>
+  {{template "topbar" .}}
+  <main id="main" tabindex="-1">
+    {{template "content" .}}
+  </main>
+  {{template "footer" .}}
+  {{template "tabbar" .}}
+  {{template "scripts" .}}
+</body>
+</html>{{end}}

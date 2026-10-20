@@ -1,0 +1,13 @@
+{{/* Provider and admin layout: left sidebar + top bar. Built out in L1/L6. */}}
+{{define "console"}}<!doctype html>
+<html{{template "html-attrs" .}}>
+{{template "head" .}}
+<body class="layout-console">
+  <a class="skip-link" href="#main">Skip to content</a>
+  {{template "topbar" .}}
+  <main id="main" tabindex="-1">
+    {{template "content" .}}
+  </main>
+  {{template "scripts" .}}
+</body>
+</html>{{end}}

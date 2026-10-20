@@ -1,0 +1,27 @@
+{{/* L0 home: greeting + live data check. Ask Saarthi replaces the check in L2. */}}
+{{define "content"}}
+<section class="hero container">
+  <h1 class="display">Where are you headed?</h1>
+  <p>Scooters, bikes, cars, EVs and cycles from local shops in Mount Abu and Goa. The price you see is the whole price.</p>
+</section>
+
+<section class="section container" aria-labelledby="data-check">
+  <h2 id="data-check" class="section-title">Data check</h2>
+  <div class="stat-grid">
+    <div class="card stat"><div class="value num">{{.Data.Counts.LiveVehicles}}</div><div class="label">vehicles you can book</div></div>
+    <div class="card stat"><div class="value num">{{.Data.Counts.Shops}}</div><div class="label">shops ({{.Data.Counts.Vehicles}} vehicles in total)</div></div>
+    <div class="card stat"><div class="value num">{{.Data.Counts.Cities}}</div><div class="label">cities, {{.Data.Counts.Areas}} areas</div></div>
+    <div class="card stat"><div class="value num">{{.Data.Counts.Bookings}}</div><div class="label">demo bookings</div></div>
+  </div>
+</section>
+
+<section class="section container" aria-labelledby="demo-accounts">
+  <h2 id="demo-accounts" class="section-title">Demo accounts</h2>
+  <div class="card">
+    <ul class="check-list" role="list">
+      {{range .Data.DemoEmails}}<li>{{icon "circle-check"}}<span class="kbd">{{.}}</span></li>{{end}}
+    </ul>
+    <p class="small muted" style="margin-top: var(--s-4)">Password for all: <span class="kbd">{{.Data.DemoPass}}</span>. One-tap “Try as…” buttons arrive with login in L4.</p>
+  </div>
+</section>
+{{end}}
