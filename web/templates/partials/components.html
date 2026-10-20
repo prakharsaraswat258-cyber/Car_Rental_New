@@ -1,0 +1,588 @@
+{{/* ===== Small pieces ===== */}}
+
+{{define "tip"}}<span class="tip" tabindex="0" role="note" aria-label="{{.}}" data-tip="{{.}}">{{icon "info"}}</span>{{end}}
+
+{{define "status-chip"}}<span class="chip chip-status tone-{{.Tone}}">{{.Label}}</span>{{end}}
+
+{{define "form-error"}}<div class="form-error" role="alert">{{icon "circle-alert"}}<span>{{.}}</span></div>{{end}}
+
+{{define "empty"}}
+<div class="empty">
+  {{if .Art}}<div class="empty-art">{{art .Art}}</div>{{end}}
+  <h2>{{.Title}}</h2>
+  {{if .Text}}<p>{{.Text}}</p>{{end}}
+  {{if .URL}}<a class="btn btn-primary" href="{{.URL}}">{{.Label}}</a>{{end}}
+</div>
+{{end}}
+
+{{define "media"}}{{/* dict "Cover" "Art" "Name" */}}{{if .Cover}}<img src="{{.Cover}}" alt="{{.Name}}" loading="lazy" decoding="async">{{else}}{{art .Art}}{{end}}{{end}}
+
+{{/* ===== Vehicle card ===== */}}
+
+{{define "vehicle-card"}}
+<article class="vcard" data-vehicle="{{.V.ID}}">
+  <a class="vcard-link" href="{{.Href}}">
+    <div class="vcard-media tint-{{.V.Art}}" style="view-transition-name: v-{{.V.ID}}">
+      {{template "media" (dict "Cover" .V.Cover "Art" .V.Art "Name" .V.Name)}}
+      {{if .FreeFrom}}<span class="vcard-badge chip chip-status tone-road">{{.FreeFrom}}</span>{{else if not .V.InstantBook}}<span class="vcard-badge chip chip-status tone-muted">Shop confirms</span>{{end}}
+    </div>
+    <div class="vcard-body">
+      <div class="vcard-top">
+        <h3 class="vcard-title">{{.V.Name}}</h3>
+        <span class="rating" aria-label="Rated {{.V.RatingText}}">{{icon "star"}}{{.V.RatingText}}{{if .V.RatingCount}} <span class="muted">({{.V.RatingCount}})</span>{{end}}</span>
+      </div>
+      <p class="vcard-meta">{{typeLabel .V.Type}} · {{.V.ShopName}}, {{.V.Place}}</p>
+      {{if .Quote}}
+      <div class="vcard-price"><span class="price-total">{{rupees .Quote.Total}}</span><span class="small muted">total</span></div>
+      <p class="vcard-fine">{{rupees .V.Deposit}} refundable deposit · {{if .Quote.KmIncluded}}{{grouped .Quote.KmIncluded}} km free{{else}}unlimited km{{end}}</p>
+      {{else}}
+      <div class="vcard-price"><span class="price-total">{{rupees .PerDay}}</span><span class="small muted">a day, all-in</span></div>
+      <p class="vcard-fine">{{rupees .V.Deposit}} refundable deposit · {{if .V.KmPerDay}}{{grouped .V.KmPerDay}} km a day{{else}}unlimited km{{end}}</p>
+      {{end}}
+    </div>
+  </a>
+  <form class="vcard-compare" method="post" action="/compare/{{.V.ID}}" data-compare-form>
+    <button class="icon-btn on-media" type="submit" aria-pressed="{{if .InCompare}}true{{else}}false{{end}}" data-compare="{{.V.ID}}" aria-label="Compare {{.V.Name}}" title="Compare">{{icon "git-compare"}}</button>
+  </form>
+</article>
+{{end}}
+
+{{define "skeleton-cards"}}
+<div class="cards skeletons" aria-hidden="true">
+  {{range seq 6}}<div class="skeleton"><div class="skel skel-media"></div><div class="skel-lines"><div class="skel skel-line w-60"></div><div class="skel skel-line w-80"></div><div class="skel skel-line tall"></div><div class="skel skel-line w-40"></div></div></div>{{end}}
+</div>
+{{end}}
+
+{{/* ===== Pricing ===== */}}
+
+{{define "bill"}}
+<dl class="bill">
+  {{range .}}<div class="bill-row bill-{{.Kind}}"><dt>{{.Label}}{{if .Detail}}<small>{{.Detail}}</small>{{end}}</dt><dd>{{rupees .Amount}}</dd></div>{{end}}
+</dl>
+{{end}}
+
+{{define "addon-rows"}}
+{{if .}}
+<fieldset class="stack-2" style="border:0;padding:0;margin:0">
+  <legend class="field-label" style="margin-bottom:8px">Add-ons</legend>
+  {{range .}}
+  <label class="check-row">
+    <input type="checkbox" name="addon" value="{{.ID}}" {{if .Checked}}checked{{end}}>
+    <span class="check-box">{{icon "check"}}</span>
+    <span class="check-text"><b>{{.Name}}</b><small>{{rupees .Price}} {{.Detail}}</small></span>
+    <span class="check-price">{{rupees .Price}}</span>
+  </label>
+  {{end}}
+</fieldset>
+{{end}}
+{{end}}
+
+{{define "price-box"}}
+<div id="price-box">
+<aside class="pricebox" aria-label="Price">
+  <form class="stack" action="/v/{{.V.ID}}" method="get" hx-get="{{.Action}}" hx-target="#price-box" hx-swap="outerHTML" hx-trigger="change">
+    {{template "drp" .DRP}}
+    {{template "addon-rows" .Addons}}
+    {{if .Err}}{{template "form-error" .Err}}{{end}}
+    {{if .Quote}}
+    <div>
+      <div class="pricebox-total">
+        <span class="odo" id="odo-detail" data-odo="{{rupees .Quote.Total}}">{{rupees .Quote.Total}}</span>
+        <span class="muted">total</span>
+        {{template "tip" "Rent, fees and taxes for your dates. Deposit shown separately"}}
+      </div>
+      <p class="pricebox-deposit">+ {{rupees .Quote.Deposit}} refundable deposit {{template "tip" "Held during the trip and returned after inspection"}}</p>
+    </div>
+    {{if .Conflict}}
+    <div class="conflict" role="alert">
+      <span>{{icon "calendar-x" "sm"}} {{.Conflict.Text}} {{.Conflict.Suggest}}</span>
+      {{if .Conflict.SuggestURL}}<a class="btn btn-secondary btn-sm" href="{{.Conflict.SuggestURL}}">Use those dates</a>{{end}}
+    </div>
+    {{end}}
+    <details class="bill-details">
+      <summary class="small link" style="cursor:pointer">See the itemised bill</summary>
+      {{template "bill" .Quote.Lines}}
+    </details>
+    {{if .Conflict}}
+      <button class="btn btn-primary btn-block btn-lg" type="button" disabled>Book for {{rupees .Quote.Total}}</button>
+    {{else if .IsRenter}}
+      <a class="btn btn-primary btn-block btn-lg" href="{{.BookURL}}">Book for {{rupees .Quote.Total}}</a>
+    {{else if .LoggedIn}}
+      <p class="small muted center">You're logged in as a shop or admin. Log in as a renter to book.</p>
+    {{else}}
+      <button class="btn btn-primary btn-block btn-lg" type="button" data-sheet-open="login-sheet" data-next="{{.BookURL}}">Book for {{rupees .Quote.Total}}</button>
+    {{end}}
+    <p class="small muted center">Free cancellation until 24 h before pickup.</p>
+    {{else if not .Err}}
+    <div class="pricebox-total"><span class="odo" id="odo-detail" data-odo="{{rupees .DayTotal}}">{{rupees .DayTotal}}</span><span class="muted">a day, all-in</span></div>
+    <p class="small muted">Pick your dates to see the total for your trip. Rent, fees and taxes included; the {{rupees .V.Deposit}} deposit comes back after inspection.</p>
+    <button class="btn btn-primary btn-block btn-lg" type="button" data-drp-trigger-for="price-box">Pick dates</button>
+    {{end}}
+  </form>
+</aside>
+<div class="mobile-bookbar">
+  {{if .Quote}}
+  <div><span class="odo" id="odo-bar" data-odo="{{rupees .Quote.Total}}">{{rupees .Quote.Total}}</span><div class="tiny muted">total · {{rupees .Quote.Deposit}} deposit</div></div>
+  {{if .Conflict}}<button class="btn btn-primary" disabled>Dates taken</button>
+  {{else if .IsRenter}}<a class="btn btn-primary" href="{{.BookURL}}">Book</a>
+  {{else if not .LoggedIn}}<button class="btn btn-primary" type="button" data-sheet-open="login-sheet" data-next="{{.BookURL}}">Book</button>{{end}}
+  {{else}}
+  <div><span class="odo" id="odo-bar" data-odo="{{rupees .DayTotal}}">{{rupees .DayTotal}}</span><div class="tiny muted">a day, all-in</div></div>
+  <button class="btn btn-primary" type="button" data-drp-trigger-for="price-box">Pick dates</button>
+  {{end}}
+</div>
+</div>
+{{end}}
+
+{{/* ===== Date range picker (enhanced by daterange.js) ===== */}}
+
+{{define "drp"}}
+<div class="drp" data-drp data-busy="{{.Busy}}" data-today="{{.Today}}">
+  <div class="drp-native">
+    <label class="field"><span class="field-label">Pickup</span><input class="input" type="datetime-local" name="start" value="{{.Start}}" step="1800" data-drp-start></label>
+    <label class="field"><span class="field-label">Return</span><input class="input" type="datetime-local" name="end" value="{{.End}}" step="1800" data-drp-end></label>
+  </div>
+  <button type="button" class="drp-trigger" data-drp-open aria-label="Choose pickup and return">
+    <span><small>Pickup</small><b data-drp-label="start">{{.StartLabel}}</b></span>
+    <span><small>Return</small><b data-drp-label="end">{{.EndLabel}}</b></span>
+  </button>
+</div>
+{{end}}
+
+{{/* ===== Availability month ===== */}}
+
+{{define "cal-month"}}
+<div class="cal" id="cal-{{.VehicleID}}">
+  <div class="cal-head">
+    {{if .PrevURL}}<button class="icon-btn" type="button" hx-get="{{.PrevURL}}" hx-target="#cal-{{.VehicleID}}" hx-swap="outerHTML" aria-label="Previous month">{{icon "chevron-left"}}</button>{{else}}<span class="icon-btn" aria-hidden="true"></span>{{end}}
+    <h3>{{.Title}}</h3>
+    {{if .NextURL}}<button class="icon-btn" type="button" hx-get="{{.NextURL}}" hx-target="#cal-{{.VehicleID}}" hx-swap="outerHTML" aria-label="Next month">{{icon "chevron-right"}}</button>{{else}}<span class="icon-btn" aria-hidden="true"></span>{{end}}
+  </div>
+  <div class="cal-grid">
+    <div class="cal-dow">Mo</div><div class="cal-dow">Tu</div><div class="cal-dow">We</div><div class="cal-dow">Th</div><div class="cal-dow">Fr</div><div class="cal-dow">Sa</div><div class="cal-dow">Su</div>
+    {{range .Weeks}}{{range .}}<div class="cal-day{{if not .InMonth}} is-out{{else if .Past}} is-past{{else if .Busy}} is-busy{{else}} is-free{{if .Partial}} is-partial{{end}}{{end}}{{if and .Today .InMonth}} is-today{{end}}"{{if and .InMonth .Busy}} aria-label="{{.Day}}, booked"{{end}}>{{if .InMonth}}{{.Day}}{{end}}</div>{{end}}{{end}}
+  </div>
+  <div class="cal-legend">
+    <span><i style="border:1px solid var(--line-2)"></i>Free</span>
+    <span><i style="background:var(--paper-2)"></i><s>Booked</s></span>
+    <span><i style="background:var(--warn);width:6px;height:6px;border-radius:50%"></i>Part of the day booked</span>
+  </div>
+</div>
+{{end}}
+
+{{/* ===== Status line ===== */}}
+
+{{define "status-line"}}
+{{$step := .Step}}
+{{if eq .Status "awaiting_shop"}}
+<div class="banner tone-warn" role="status"><span class="pulse-dot"></span><div><b>Waiting for the shop, usually under 15 min</b>{{.ShopName}} confirms this booking personally. If they can't, your money comes back in full.</div></div>
+{{else if eq .Status "pending_payment"}}
+<div class="banner tone-warn" role="status">{{icon "hourglass"}}<div><b>Payment pending</b>Slot held until {{clock .PayBy}}. After that it goes back on the market.</div></div>
+{{end}}
+<ol class="statusline{{if lt $step 0}} is-off{{end}}" data-statusline data-step="{{$step}}" aria-label="Trip progress">
+  {{range $i, $label := stepLabels}}{{$n := add $i 1}}
+  <li class="sl-step{{if or (lt $n $step) (and (eq $n $step) (eq $step 6))}} is-done{{else if eq $n $step}} is-done is-current{{end}}"{{if eq $n $step}} aria-current="step"{{end}}>
+    <span class="sl-dot">{{icon "check"}}</span>
+    <span class="sl-label">{{$label}}</span>
+    {{if lt $n 6}}<span class="sl-line"><span class="sl-fill" {{if ge $n $step}}style="transform:scaleX(0)"{{end}}></span></span>{{end}}
+  </li>
+  {{end}}
+</ol>
+{{end}}
+
+{{/* ===== Deposit tracker ===== */}}
+
+{{define "deposit-tracker"}}
+{{if ge .Stop 0}}
+<section class="card deposit" id="deposit" data-deposit data-stop="{{.Stop}}" data-key="{{.Code}}" data-held="{{rupees .Held}}" data-refund="{{rupees .Refund}}"
+  {{if .Live}}hx-get="/trips/{{.Code}}/deposit" hx-trigger="every 15s" hx-swap="outerHTML"{{end}} aria-labelledby="dep-title-{{.Code}}">
+  <div class="dep-head">
+    <div>
+      <h2 class="h3" id="dep-title-{{.Code}}">Refundable deposit {{template "tip" "Held during the trip and returned after inspection"}}</h2>
+      <p class="small muted">{{.Note}}</p>
+    </div>
+    <span class="dep-amount"><span class="odo" id="dep-amount-{{.Code}}" data-odo="{{if ge .Stop 2}}{{rupees .Refund}}{{else}}{{rupees .Held}}{{end}}">{{if ge .Stop 2}}{{rupees .Refund}}{{else}}{{rupees .Held}}{{end}}</span></span>
+  </div>
+  <div class="dep-track" role="list">
+    <div class="dep-rail" aria-hidden="true"><div class="dep-rail-fill"></div></div>
+    <div class="dep-stop{{if ge .Stop 0}} is-done{{end}}" role="listitem">Held{{if not .HeldAt.IsZero}}<time>{{date .HeldAt}}</time>{{end}}</div>
+    <div class="dep-stop{{if ge .Stop 1}} is-done{{end}}" role="listitem">Inspection{{if and (ge .Stop 1) (not .InspAt.IsZero)}}<time>{{clock .InspAt}}</time>{{end}}</div>
+    <div class="dep-stop{{if ge .Stop 2}} is-done{{end}}" role="listitem">Released{{if and (ge .Stop 2) (not .RelAt.IsZero)}}<time>{{clock .RelAt}}</time>{{end}}</div>
+    <div class="dep-stop{{if ge .Stop 3}} is-done{{end}}" role="listitem">Credited{{if and (ge .Stop 3) (not .CredAt.IsZero)}}<time>{{clock .CredAt}}</time>{{end}}</div>
+    <span class="dep-coin" aria-hidden="true">₹</span>
+  </div>
+  {{if .Items}}
+  <dl class="dep-list">
+    <div><dt>Held</dt><dd style="color:var(--ink)">{{rupees .Held}}</dd></div>
+    {{range .Items}}<div><dt>{{.Kind.Label}}<small>{{.Note}}</small></dt><dd>−{{rupees .Amount}}</dd></div>{{end}}
+    <div class="bill-refund"><dt>Back to you</dt><dd style="color:var(--good)">{{rupees .Refund}}</dd></div>
+  </dl>
+  {{end}}
+</section>
+{{end}}
+{{end}}
+
+{{/* ===== Photos ===== */}}
+
+{{define "photo-grid"}}
+{{if .}}
+<ul class="photogrid" role="list">
+  {{range .}}<li><figure><a href="{{.URL}}" target="_blank" rel="noopener"><img src="{{.URL}}" alt="{{angleLabel .Angle}} photo" loading="lazy"></a><figcaption>{{angleLabel .Angle}} · {{date .TakenAt}}, {{clock .TakenAt}}</figcaption></figure></li>{{end}}
+</ul>
+{{end}}
+{{end}}
+
+{{define "angle-tile"}}
+<li class="angle{{if .Photo}} is-done{{end}}" data-angle="{{.Angle}}"{{if .Required}} data-required{{end}} data-hint="{{.Hint}}">
+  <label class="angle-tile">
+    <input class="sr-only" type="file" accept="image/jpeg,image/png" capture="environment" data-upload="/trips/{{.Code}}/photos" data-phase="{{.Phase}}" data-angle="{{.Angle}}">
+    <span class="angle-thumb">{{if .Photo}}<img src="{{.Photo.URL}}" alt="">{{else}}{{icon "camera"}}{{end}}</span>
+    <span class="angle-text"><b>{{.Label}}{{if not .Required}} <span class="muted small">(optional)</span>{{end}}</b><small>{{if .Photo}}Taken {{clock .Photo.TakenAt}} · tap to retake{{else}}Tap to take a photo{{end}}</small></span>
+    <span class="angle-check">{{icon "check"}}</span>
+  </label>
+</li>
+{{end}}
+
+{{define "silhouette"}}
+<svg class="silhouette" viewBox="0 0 160 260" aria-hidden="true" data-silhouette>
+  <path class="zone" data-zone="front" d="M40 30 Q80 6 120 30 L120 64 L40 64 Z"/>
+  <path class="zone" data-zone="back" d="M40 196 L120 196 L120 230 Q80 254 40 230 Z"/>
+  <path class="zone" data-zone="left" d="M28 68 L46 68 L46 192 L28 192 Q22 130 28 68 Z"/>
+  <path class="zone" data-zone="right" d="M114 68 L132 68 Q138 130 132 192 L114 192 Z"/>
+  <path class="outline" d="M48 24 Q80 4 112 24 Q132 36 134 64 Q140 130 134 196 Q132 224 112 236 Q80 256 48 236 Q28 224 26 196 Q20 130 26 64 Q28 36 48 24 Z"/>
+  <path class="outline" d="M50 70 H110 L104 100 H56 Z M56 164 H104 L110 190 H50 Z" opacity=".6"/>
+  <text x="80" y="22" text-anchor="middle">FRONT</text>
+  <text x="80" y="250" text-anchor="middle">BACK</text>
+  <text x="12" y="134" text-anchor="middle" transform="rotate(-90 12 130)">LEFT</text>
+  <text x="148" y="130" text-anchor="middle" transform="rotate(90 148 130)">RIGHT</text>
+</svg>
+{{end}}
+
+{{/* ===== Auth ===== */}}
+
+{{define "login-form"}}
+<form method="post" action="/login" class="stack" data-submit-loading>
+  <input type="hidden" name="next" value="{{.Next}}">
+  {{if .Error}}{{template "form-error" .Error}}{{end}}
+  <label class="field"><span class="field-label">Email</span><input class="input" type="email" name="email" autocomplete="email" required value="{{.Email}}" placeholder="you@example.com"></label>
+  <label class="field"><span class="field-label">Password</span><input class="input" type="password" name="password" autocomplete="current-password" required></label>
+  <button class="btn btn-primary btn-block btn-lg" type="submit">{{wheel}}<span>Continue</span></button>
+</form>
+<div class="or">or try a demo account</div>
+<div class="demo-buttons">
+  <form method="post" action="/login/demo/renter" data-submit-loading><input type="hidden" name="next" value="{{.Next}}"><button class="btn btn-secondary btn-block" type="submit">{{wheel}}{{icon "user-round"}}<span>Try as Renter</span><small>Riya · trips in every state</small></button></form>
+  <form method="post" action="/login/demo/provider" data-submit-loading><input type="hidden" name="next" value=""><button class="btn btn-secondary btn-block" type="submit">{{wheel}}{{icon "store"}}<span>Try as Provider</span><small>Abu Riders, Mount Abu</small></button></form>
+  <form method="post" action="/login/demo/admin" data-submit-loading><input type="hidden" name="next" value=""><button class="btn btn-secondary btn-block" type="submit">{{wheel}}{{icon "shield-check"}}<span>Try as Admin</span><small>Verify a new shop</small></button></form>
+</div>
+{{end}}
+
+{{/* ===== Booking sheets ===== */}}
+
+{{define "pay-sheet"}}
+<dialog class="sheet" id="pay-sheet" data-sheet data-autoopen aria-labelledby="pay-title">
+  <div class="sheet-panel">
+    <div class="sheet-handle" data-sheet-handle></div>
+    <header class="sheet-head"><h2 id="pay-title">Pay (demo)</h2><button class="icon-btn" type="button" data-sheet-close aria-label="Close">{{icon "x"}}</button></header>
+    {{template "pay-body" .}}
+  </div>
+</dialog>
+{{end}}
+
+{{define "pay-body"}}
+<div class="sheet-body stack" id="pay-body">
+  <p class="muted small">No real money moves here. Choose what the bank says.</p>
+  <div class="card">
+    <div class="row-between"><b>{{.B.VehicleName}}</b><span class="mono small muted">{{.B.Code}}</span></div>
+    <p class="small muted" style="margin-bottom:8px">{{rangeText .B.Start .B.End}} · {{.B.ShopName}}</p>
+    {{template "bill" .B.Lines}}
+  </div>
+  {{if .Error}}{{template "form-error" .Error}}{{end}}
+  {{if eq .B.Status "pending_payment"}}
+  <p class="small muted">{{icon "hourglass" "sm"}} Your slot is held until {{clock .B.PayBy}}.</p>
+  <div class="row" style="flex-wrap:wrap">
+    <form class="grow" method="post" action="/bookings/{{.B.Code}}/pay" hx-post="/bookings/{{.B.Code}}/pay" hx-target="#pay-body" hx-swap="outerHTML">
+      <input type="hidden" name="result" value="success">
+      <button class="btn btn-primary btn-lg btn-block" type="submit">{{wheel}}<span>Success · pay {{rupees .B.PayNow}}</span></button>
+    </form>
+    <form method="post" action="/bookings/{{.B.Code}}/pay" hx-post="/bookings/{{.B.Code}}/pay" hx-target="#pay-body" hx-swap="outerHTML">
+      <input type="hidden" name="result" value="fail">
+      <button class="btn btn-danger btn-lg" type="submit">{{wheel}}<span>Fail</span></button>
+    </form>
+  </div>
+  <p class="tiny muted">{{rupees .B.Total}} rent, add-ons and GST + {{rupees .B.Deposit}} refundable deposit.</p>
+  {{else}}
+  <a class="btn btn-secondary btn-block" href="/trips/{{.B.Code}}">See the trip</a>
+  {{end}}
+</div>
+{{end}}
+
+{{define "checkout-bill"}}
+<div id="checkout-bill" class="stack">
+  {{if .Box.Err}}{{template "form-error" .Box.Err}}{{end}}
+  {{if .Box.Conflict}}<div class="conflict" role="alert"><span>{{.Box.Conflict.Text}} {{.Box.Conflict.Suggest}}</span>{{if .Box.Conflict.SuggestURL}}<a class="btn btn-secondary btn-sm" href="/checkout/{{.Box.V.ID}}?{{.Box.AddonQuery}}">Pick other dates</a>{{end}}</div>{{end}}
+  {{if .Box.Quote}}
+  <div class="pricebox-total"><span class="odo" id="odo-checkout" data-odo="{{rupees .Box.Quote.Total}}">{{rupees .Box.Quote.Total}}</span><span class="muted">total</span>{{template "tip" "Rent, fees and taxes for your dates. Deposit shown separately"}}</div>
+  <p class="small muted">{{rupees .Box.Quote.Total}} total. Your {{rupees .Box.Quote.Deposit}} deposit returns after inspection.</p>
+  {{template "bill" .Box.Quote.Lines}}
+  {{if .Box.Quote.KmIncluded}}<p class="small muted">{{icon "gauge" "sm"}} {{grouped .Box.Quote.KmIncluded}} km included {{template "tip" (printf "Free kilometres included; extra km cost %s each" (rupees .Box.V.ExtraKm))}}</p>{{end}}
+  {{end}}
+  {{if and .Box.Quote (not .Box.Conflict) (not .Box.Err)}}
+  <button class="btn btn-primary btn-block btn-lg" type="button" hx-post="/bookings" hx-include="#checkout-form" hx-target="#sheet-root" hx-swap="innerHTML">{{wheel}}<span>Pay {{rupees .Box.Quote.PayNow}}</span></button>
+  <noscript><button class="btn btn-primary btn-block btn-lg" type="submit" form="checkout-form">Pay {{rupees .Box.Quote.PayNow}}</button></noscript>
+  <p class="tiny muted center">Demo payment. You'll pick Success or Fail on the next screen.</p>
+  {{else}}
+  <button class="btn btn-primary btn-block btn-lg" type="button" disabled>Pick free dates to pay</button>
+  {{end}}
+</div>
+{{end}}
+
+{{/* ===== Compare ===== */}}
+
+{{define "compare-tray"}}
+{{if .Compare}}
+<div class="tray" id="compare-tray" role="region" aria-label="Compare tray">
+  <div class="tray-thumbs">
+    {{range .Compare}}<span class="tray-thumb tint-{{.Art}}" title="{{.Name}}" data-tray-id="{{.ID}}">{{template "media" (dict "Cover" .Cover "Art" .Art "Name" "")}}</span>{{end}}
+  </div>
+  <button class="btn btn-sm" type="button" hx-get="/compare" hx-target="#sheet-root" hx-swap="innerHTML">Compare <span class="tray-count" data-tray-count>{{len .Compare}}</span></button>
+</div>
+{{else}}
+<div id="compare-tray" hidden></div>
+{{end}}
+{{end}}
+
+{{define "compare-full"}}
+<dialog class="dialog" id="compare-full" data-sheet data-autoopen aria-labelledby="cf-title">
+  <div class="dialog-panel">
+    <h2 id="cf-title">Compare holds 3. Replace one?</h2>
+    <p class="muted">Pick one to swap for the {{.New.Name}}.</p>
+    <div class="stack-2" style="margin-top:16px">
+      {{range .Current}}
+      <form method="post" action="/compare/{{$.New.ID}}?replace={{.ID}}" data-compare-form>
+        <button class="check-row" style="width:100%;text-align:left" type="submit">
+          <span class="tray-thumb tint-{{.Art}}" style="margin:0">{{template "media" (dict "Cover" .Cover "Art" .Art "Name" "")}}</span>
+          <span class="check-text"><b>{{.Name}}</b><small>{{.ShopName}}</small></span>
+          <span class="small link">Replace</span>
+        </button>
+      </form>
+      {{end}}
+    </div>
+    <div class="dialog-actions"><button class="btn btn-ghost" type="button" data-sheet-close>Keep my 3</button></div>
+  </div>
+</dialog>
+{{end}}
+
+{{define "compare-table"}}
+{{if .Cards}}
+<div class="table-wrap">
+<table class="compare-table">
+  <thead>
+    <tr><th scope="col"><span class="sr-only">Detail</span></th>
+      {{range .Cards}}<th scope="col"><div class="compare-media tint-{{.V.Art}}">{{template "media" (dict "Cover" .V.Cover "Art" .V.Art "Name" .V.Name)}}</div><b>{{.V.Name}}</b><div class="tiny muted">{{.V.Place}}</div></th>{{end}}
+    </tr>
+  </thead>
+  <tbody>
+    {{range .Rows}}<tr><th scope="row">{{.Label}}</th>{{range .Cells}}<td{{if .Best}} class="best"{{end}}>{{.Text}}{{if .Best}} <span class="sr-only">(best)</span>{{end}}</td>{{end}}</tr>{{end}}
+    <tr><th scope="row"></th>{{range .Cards}}<td>
+      <a class="btn btn-primary btn-sm" href="{{.Href}}">Book this one</a>
+      <form method="post" action="/compare/{{.V.ID}}/remove" data-compare-remove style="margin-top:8px"><button class="btn btn-ghost btn-sm" type="submit">Remove</button></form>
+    </td>{{end}}</tr>
+  </tbody>
+</table>
+</div>
+<p class="tiny muted" style="margin-top:8px">Best value in each row is in bold green.{{if not .HasDates}} Totals are for one day; pick dates on a vehicle for the exact total.{{end}}</p>
+{{else}}
+{{template "empty" (dict "Art" "car" "Title" "Nothing to compare yet" "Text" "Tap the compare button on up to 3 vehicles to see them side by side." "URL" "/search" "Label" "Browse vehicles")}}
+{{end}}
+{{end}}
+
+{{define "compare-sheet"}}
+<dialog class="sheet wide" id="compare-sheet" data-sheet data-autoopen aria-labelledby="cmp-title">
+  <div class="sheet-panel">
+    <div class="sheet-handle" data-sheet-handle></div>
+    <header class="sheet-head"><h2 id="cmp-title">Side by side</h2><button class="icon-btn" type="button" data-sheet-close aria-label="Close">{{icon "x"}}</button></header>
+    <div class="sheet-body">{{template "compare-table" .}}</div>
+  </div>
+</dialog>
+{{end}}
+
+{{/* ===== Classic search form ===== */}}
+
+{{define "search-form"}}
+<form class="classic" action="/search" method="get">
+  <label class="field">
+    <span class="field-label">Where</span>
+    <select class="input" name="place">
+      <option value="">Anywhere</option>
+      {{range $c := .Cities}}
+        <option value="city:{{$c.Slug}}" {{if and (eq $.City $c.Slug) (not $.Area)}}selected{{end}}>{{$c.Name}}</option>
+        {{range $c.Areas}}<option value="area:{{.ID}}" {{if eq $.Area .ID}}selected{{end}}>&nbsp;&nbsp;{{.Name}}, {{$c.Name}}</option>{{end}}
+      {{end}}
+    </select>
+  </label>
+  <div class="field"><span class="field-label">When</span>{{template "drp" .DRP}}</div>
+  <label class="field">
+    <span class="field-label">What</span>
+    <select class="input" name="type">
+      <option value="">Any vehicle</option>
+      <option value="scooter" {{if has $.Types "scooter"}}selected{{end}}>Scooter</option>
+      <option value="bike" {{if has $.Types "bike"}}selected{{end}}>Bike</option>
+      <option value="car" {{if has $.Types "car"}}selected{{end}}>Car</option>
+      <option value="ev" {{if has $.Types "ev"}}selected{{end}}>EV</option>
+      <option value="cycle" {{if has $.Types "cycle"}}selected{{end}}>Cycle</option>
+    </select>
+  </label>
+  <button class="btn btn-primary btn-lg" type="submit">{{icon "search"}}Search</button>
+</form>
+{{end}}
+
+{{/* ===== Provider ===== */}}
+
+{{define "req-card"}}
+<article class="req-card" id="req-{{.ID}}">
+  <div class="row-between">
+    <div>
+      <h3 class="h3">{{.RenterName}}</h3>
+      <p class="small muted">{{.VehicleName}} · {{rangeText .Start .End}}</p>
+    </div>
+    {{template "status-chip" .Status}}
+  </div>
+  <p class="small">{{rupees .Total}} total · {{rupees .Deposit}} deposit held · <a class="link mono" href="/p/bookings/{{.ID}}">{{.Code}}</a></p>
+  <div class="req-actions">
+    {{if eq .Status "awaiting_shop"}}
+      <form method="post" action="/p/bookings/{{.ID}}/accept" hx-post="/p/bookings/{{.ID}}/accept" hx-target="#req-{{.ID}}" hx-swap="outerHTML"><button class="btn btn-primary btn-sm" type="submit">{{wheel}}<span>Accept</span></button></form>
+      <form method="post" action="/p/bookings/{{.ID}}/decline" hx-post="/p/bookings/{{.ID}}/decline" hx-target="#req-{{.ID}}" hx-swap="outerHTML swap:260ms"><button class="btn btn-secondary btn-sm" type="submit">{{wheel}}<span>Decline</span></button></form>
+    {{else if eq .Status "confirmed"}}
+      <form method="post" action="/p/bookings/{{.ID}}/ready" hx-post="/p/bookings/{{.ID}}/ready" hx-target="#req-{{.ID}}" hx-swap="outerHTML"><button class="btn btn-primary btn-sm" type="submit">{{wheel}}<span>Mark ready for pickup</span></button></form>
+    {{else if eq .Status "ready"}}
+      <span class="small muted">{{if .CheckedIn}}{{icon "circle-check" "sm"}} Check-in photos in. Waiting for the swipe.{{else}}Waiting for check-in photos.{{end}}</span>
+    {{else if eq .Status "active"}}
+      <span class="small muted">Due back {{date .End}}, {{clock .End}}</span>
+    {{else if eq .Status "returned"}}
+      <a class="btn btn-primary btn-sm" href="/p/bookings/{{.ID}}/inspect">Inspect and release deposit</a>
+    {{end}}
+    {{if .RenterPhone}}<a class="btn btn-ghost btn-sm" href="{{tel .RenterPhone}}">{{icon "phone" "sm"}}Call</a>{{end}}
+  </div>
+</article>
+{{end}}
+
+{{define "vehicle-status-chip"}}
+{{if eq .Status "live"}}<span class="chip chip-status tone-good">Live</span>
+{{else if eq .Status "hidden"}}<span class="row" style="gap:2px"><span class="chip chip-status tone-muted">Hidden</span>{{template "tip" "Not shown to renters. Toggle Live to publish"}}</span>
+{{else}}<span class="chip chip-status tone-warn">Draft</span>{{end}}
+{{end}}
+
+{{define "fleet-card"}}
+<article class="vcard" id="fleet-{{.ID}}">
+  <a class="vcard-link" href="/p/vehicles/{{.ID}}/edit">
+    <div class="vcard-media tint-{{.Art}}">
+      {{template "media" (dict "Cover" .Cover "Art" .Art "Name" .Name)}}
+      <span class="vcard-badge">{{if not .Photos}}<span class="chip chip-status tone-accent">No photo yet</span>{{end}}</span>
+    </div>
+    <div class="vcard-body">
+      <div class="vcard-top"><h3 class="vcard-title">{{.Name}}</h3><span class="rating">{{icon "star"}}{{.RatingText}}</span></div>
+      <p class="vcard-meta">{{typeLabel .Type}} · {{if .Reg}}{{.Reg}}{{else}}no reg. number{{end}}</p>
+      <p class="small"><b class="num">{{rupees .Daily}}</b>/day · {{rupees .Hourly}}/h · {{rupees .Deposit}} deposit</p>
+    </div>
+  </a>
+  <div class="fleet-actions">
+    {{template "vehicle-status-chip" .}}
+    {{if ne .Status "draft"}}
+    <form method="post" action="/p/vehicles/{{.ID}}/status" hx-post="/p/vehicles/{{.ID}}/status" hx-target="#fleet-{{.ID}}" hx-swap="outerHTML">
+      <input type="hidden" name="status" value="{{if eq .Status "live"}}hidden{{else}}live{{end}}">
+      <button class="switch" type="submit" role="switch" aria-checked="{{if eq .Status "live"}}true{{else}}false{{end}}" aria-label="Live">
+        <span class="switch-track"><span class="switch-thumb"></span></span><span class="small">Live</span>
+      </button>
+    </form>
+    {{else}}
+    <a class="btn btn-secondary btn-sm" href="/p/vehicles/{{.ID}}/edit?step=photos">Finish</a>
+    {{end}}
+  </div>
+</article>
+{{end}}
+
+{{define "photo-manage"}}
+<div class="photo-manage" id="photo-manage" data-photo-count="{{len .Photos}}">
+  {{range .Photos}}
+  <figure>
+    <img src="{{.URL}}" alt="Vehicle photo">
+    <form method="post" action="/p/vehicles/{{$.ID}}/photos/{{.ID}}/delete" data-photo-delete><button class="icon-btn on-media" type="submit" aria-label="Remove photo">{{icon "trash-2" "sm"}}</button></form>
+  </figure>
+  {{end}}
+  {{if lt (len .Photos) 8}}
+  <label class="drop">
+    <input class="sr-only" type="file" accept="image/jpeg,image/png" data-photo-upload="/p/vehicles/{{.ID}}/photos" multiple>
+    {{icon "upload" "lg"}}<span>Add photos</span><small class="muted">JPEG or PNG, up to 8 MB</small>
+  </label>
+  {{end}}
+</div>
+{{end}}
+
+{{define "pcal"}}
+<div class="pcal-wrap" id="pcal" data-pcal>
+  <div class="pcal" role="grid" aria-label="Fleet calendar">
+    <div class="pcal-head" role="row">
+      <div role="columnheader">Vehicle</div>
+      {{range .Days}}<div role="columnheader" class="{{if .Today}}is-today{{end}}">{{.Dow}}<b>{{.Day}}</b></div>{{end}}
+    </div>
+    {{range .Rows}}
+    <div class="pcal-row" role="row" data-vehicle="{{.V.ID}}">
+      <div class="pcal-name" role="rowheader"><span>{{.V.Name}}<small>{{if .V.Reg}}{{.V.Reg}}{{else}}{{typeLabel .V.Type}}{{end}}{{if eq .V.Status "hidden"}} · hidden{{end}}</small></span></div>
+      {{$vid := .V.ID}}{{$vname := .V.Name}}
+      {{range $.Days}}<button type="button" class="pcal-cell{{if .Weekend}} is-weekend{{end}}" data-day="{{.Date}}" data-vehicle="{{$vid}}" aria-label="{{$vname}}, {{.Dow}} {{.Day}}"></button>{{end}}
+      <div class="pcal-bars">
+        {{range .Bars}}
+          {{if .BlockID}}
+          <button type="button" class="pcal-bar is-block" style="left:{{pct .Left}};width:{{pct .Width}}" data-block-id="{{.BlockID}}" title="{{.Title}} · tap to remove"><b>{{.Title}}</b>{{.Sub}}</button>
+          {{else}}
+          <a class="pcal-bar {{.Kind}}" style="left:{{pct .Left}};width:{{pct .Width}}" href="{{.Href}}" data-code="{{.Code}}" title="{{.Title}} · {{.Sub}}"><b>{{.Title}}</b>{{.Sub}}</a>
+          {{end}}
+        {{end}}
+      </div>
+    </div>
+    {{end}}
+  </div>
+</div>
+{{end}}
+
+{{define "inspect-summary"}}
+<div id="inspect-summary" class="stack">
+  <dl class="bill">
+    <div class="bill-row"><dt>Refundable deposit held</dt><dd>{{rupees .B.DepositHeld}}</dd></div>
+    {{range .Auto}}<div class="bill-row bill-deduct"><dt>{{.Kind.Label}} <span class="chip chip-sm tone-muted">auto</span><small>{{.Note}}</small></dt><dd>{{if .Amount}}−{{rupees .Amount}}{{else}}₹0{{end}}</dd></div>{{end}}
+    {{range .Manual}}{{if .Amount}}<div class="bill-row bill-deduct"><dt>{{.Kind.Label}}<small>{{.Note}}</small></dt><dd>−{{rupees .Amount}}</dd></div>{{end}}{{end}}
+    <div class="bill-row bill-total"><dt>Kept</dt><dd>{{rupees .Settle.Deducted}}</dd></div>
+    <div class="bill-row bill-refund"><dt>Back to {{.B.RenterName}}</dt><dd>{{rupees .Settle.Refund}}</dd></div>
+  </dl>
+  {{if .Settle.Capped}}<div class="cap-warn" role="alert">{{icon "triangle-alert" "sm"}} Deductions add up to {{rupees .Settle.Requested}}, more than the {{rupees .B.DepositHeld}} deposit. Only the deposit can be kept; anything more needs a conversation with the renter.</div>{{end}}
+  {{range $k, $v := .Errors}}{{template "form-error" $v}}{{end}}
+</div>
+{{end}}
+
+{{/* ===== Admin ===== */}}
+
+{{define "shop-row"}}
+<tr id="shop-{{.ID}}">
+  <td><b>{{.Name}}</b><div class="tiny muted">{{.OwnerName}} · {{.OwnerEmail}}</div></td>
+  <td>{{.Place}}</td>
+  <td class="num">{{.LiveCount}} / {{.VehicleCount}}</td>
+  <td>{{if eq .Status "verified"}}<span class="chip chip-status tone-good">Verified</span>{{else if eq .Status "pending"}}<span class="chip chip-status tone-warn">Pending</span>{{else}}<span class="chip chip-status tone-bad">Suspended</span>{{end}}</td>
+  <td class="actions">
+    {{if ne .Status "verified"}}<form method="post" action="/admin/shops/{{.ID}}/verify" hx-post="/admin/shops/{{.ID}}/verify" hx-target="#shop-{{.ID}}" hx-swap="outerHTML" style="display:inline"><button class="btn btn-primary btn-sm" type="submit">{{wheel}}<span>Verify</span></button></form>{{end}}
+    {{if ne .Status "suspended"}}<form method="post" action="/admin/shops/{{.ID}}/suspend" hx-post="/admin/shops/{{.ID}}/suspend" hx-target="#shop-{{.ID}}" hx-swap="outerHTML" style="display:inline"><button class="btn btn-ghost btn-sm" type="submit">{{wheel}}<span>Suspend</span></button></form>{{end}}
+  </td>
+</tr>
+{{end}}
+
+{{define "booking-rows"}}
+{{range .}}
+<tr>
+  <td class="mono small">{{.Code}}</td>
+  <td><b>{{.VehicleName}}</b><div class="tiny muted">{{.ShopName}}</div></td>
+  <td>{{.RenterName}}</td>
+  <td class="small nowrap">{{rangeText .Start .End}}</td>
+  <td>{{template "status-chip" .Status}}</td>
+  <td class="num">{{rupees .Total}}</td>
+</tr>
+{{end}}
+{{end}}

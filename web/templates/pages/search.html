@@ -1,0 +1,89 @@
+{{define "content"}}
+{{$d := .Data}}
+<div class="container" style="padding-top:var(--s-5)">
+  <form class="composer" action="/ask" method="post" data-composer data-compact data-examples="[]">
+    {{icon "search"}}
+    <div class="composer-field">
+      <input class="composer-input" name="q" type="text" autocomplete="off" enterkeyhint="search" placeholder=" " value="{{$d.Q}}"
+        aria-label="Describe the trip like a text: place, dates, vehicle, budget" maxlength="200">
+      <span class="composer-ghost" aria-hidden="true">Describe the trip: place, dates, vehicle, budget</span>
+    </div>
+    <button class="btn btn-primary btn-sm" type="submit">{{wheel}}<span>Ask</span></button>
+  </form>
+  <div class="ask-missing" data-ask-missing hidden role="status" style="margin-top:12px"><p data-ask-title></p><div class="row-wrap" data-ask-options></div></div>
+
+  <div class="results-layout" style="margin-top:var(--s-4)">
+    <div>
+      <div id="results" class="results-anchor">
+        {{template "search-results" .}}
+      </div>
+    </div>
+    <div class="map-wrap" id="map-wrap">
+      <div class="map" data-map data-pins-from="#results" aria-label="Map of results"></div>
+    </div>
+  </div>
+</div>
+<button class="btn btn-primary map-toggle" type="button" data-map-toggle aria-controls="map-wrap">{{icon "map" "sm"}}<span data-map-toggle-label>Map</span></button>
+
+<dialog class="sheet" id="filters-sheet" data-sheet aria-labelledby="filters-title">
+  <div class="sheet-panel">
+    <div class="sheet-handle" data-sheet-handle></div>
+    <header class="sheet-head"><h2 id="filters-title">Edit search</h2><button class="icon-btn" type="button" data-sheet-close aria-label="Close">{{icon "x"}}</button></header>
+    <div class="sheet-body">{{template "search-form" $d.Form}}</div>
+  </div>
+</dialog>
+{{end}}
+
+{{define "search-results"}}
+{{$d := .Data}}
+<div class="ask-chips" aria-label="Your search">
+  {{range $d.Chips}}
+  <span class="chip chip-ask">{{icon .Icon}}<button class="chip-edit" type="button" data-sheet-open="filters-sheet" style="background:none;border:0;padding:0;font:inherit;color:inherit">{{.Label}}</button>{{if .Assumed}}<span class="chip-assumed">1 day, assumed</span>{{end}}<a class="chip-x" href="{{.RemoveURL}}" aria-label="Remove {{.Label}}">{{icon "x" "sm"}}</a></span>
+  {{end}}
+  <button class="chip" type="button" data-sheet-open="filters-sheet">{{icon "sliders-horizontal"}}{{if $d.Chips}}Edit{{else}}Where, when, what{{end}}</button>
+</div>
+
+<form class="results-bar" action="/search" method="get" hx-get="/search" hx-target="#results" hx-push-url="true" hx-trigger="change delay:120ms" hx-indicator="#results">
+  <input type="hidden" name="q" value="{{$d.Q}}">
+  <span class="results-count" aria-live="polite">{{len $d.Cards}} {{if eq (len $d.Cards) 1}}vehicle{{else}}vehicles{{end}}{{if $d.HasDates}} free{{end}}</span>
+  <div class="row-wrap">
+    {{range $t := $d.AllTypes}}<label class="chip chip-filter chip-sm"><input type="checkbox" name="type" value="{{$t}}" {{if has $d.Types $t}}checked{{end}}><span>{{typeLabel $t}}</span></label>{{end}}
+    <select class="input" name="sort" aria-label="Sort" style="min-height:36px;width:auto;padding-block:4px;font-size:var(--t-14)">
+      <option value="price" {{if eq $d.Sort "price"}}selected{{end}}>Lowest price</option>
+      <option value="rating" {{if eq $d.Sort "rating"}}selected{{end}}>Best rated</option>
+    </select>
+    <button class="chip chip-sm" type="button" data-toggle="more-filters" aria-expanded="false" aria-controls="more-filters">{{icon "funnel"}}More</button>
+  </div>
+  <div id="more-filters" hidden style="flex-basis:100%">
+    <div class="row-wrap" style="padding-top:8px">
+      <span class="small muted">Fuel</span>
+      {{range $f := $d.AllFuels}}<label class="chip chip-filter chip-sm"><input type="checkbox" name="fuel" value="{{$f}}" {{if has $d.Fuels $f}}checked{{end}}><span>{{if eq $f "electric"}}Electric{{else if eq $f "petrol"}}Petrol{{else}}Diesel{{end}}</span></label>{{end}}
+      <span class="small muted" style="margin-left:8px">Gears</span>
+      {{range $t := $d.AllTrans}}<label class="chip chip-filter chip-sm"><input type="checkbox" name="trans" value="{{$t}}" {{if has $d.Trans $t}}checked{{end}}><span>{{if eq $t "automatic"}}Automatic{{else}}Manual{{end}}</span></label>{{end}}
+      <label class="row small" style="margin-left:8px">Up to ₹<input class="input" type="number" name="max" value="{{$d.Max}}" min="0" step="50" inputmode="numeric" style="width:96px;min-height:36px;padding:4px 10px"> a day</label>
+    </div>
+  </div>
+  {{template "search-hidden" $d}}
+</form>
+
+{{if $d.Widened}}<div class="banner tone-road" style="margin-bottom:16px">{{icon "map-pin"}}<div>{{$d.Widened}}</div></div>{{end}}
+
+<div class="results-cards">
+  {{if $d.Cards}}
+  <div class="cards" data-stagger>{{range $d.Cards}}{{template "vehicle-card" .}}{{end}}</div>
+  {{else if $d.Suggestions}}
+  {{template "empty" (dict "Art" "scooter" "Title" "Nothing free for those dates." "Text" "Here are 3 that are free a day later.")}}
+  <div class="cards" data-stagger>{{range $d.Suggestions}}{{template "vehicle-card" .}}{{end}}</div>
+  {{else}}
+  {{template "empty" (dict "Art" "scooter" "Title" "Nothing matches that yet." "Text" "Try fewer filters, another area, or different dates." "URL" "/search" "Label" "Clear filters")}}
+  {{end}}
+</div>
+{{template "skeleton-cards"}}
+<span hidden data-pin-list="{{$d.Pins}}"></span>
+{{end}}
+
+{{define "search-hidden"}}
+<input type="hidden" name="city" value="{{.Form.City}}">
+<input type="hidden" name="area" value="{{.Form.Area}}">
+{{if .Form.DRP.Start}}<input type="hidden" name="start" value="{{.Form.DRP.Start}}"><input type="hidden" name="end" value="{{.Form.DRP.End}}">{{end}}
+{{end}}

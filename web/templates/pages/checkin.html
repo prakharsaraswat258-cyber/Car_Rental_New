@@ -1,0 +1,37 @@
+{{define "content"}}
+{{$d := .Data}}{{$b := $d.B}}
+<div class="container">
+  <header class="page-head stack-2">
+    <a class="link small" href="/trips/{{$b.Code}}">{{icon "chevron-left" "sm"}}{{$b.VehicleName}} · {{$b.Code}}</a>
+    <h1 class="display h2">{{$d.Title}}</h1>
+    <p class="lead" style="font-size:var(--t-16)">{{$d.Lead}} {{template "tip" "Photos are timestamped so nobody can blame you later"}}</p>
+  </header>
+
+  <div class="checkin" data-checkin>
+    <div class="card">{{template "silhouette"}}<p class="tiny muted center" style="margin-top:8px">Each photo fills its side in teal.</p></div>
+    <div class="stack-6">
+      <ul class="angles plain" role="list" data-angles>
+        {{range $d.Angles}}{{template "angle-tile" .}}{{end}}
+      </ul>
+      <p class="checkin-hint" data-checkin-hint hidden role="status"></p>
+
+      <form id="swipe-form" method="post" action="{{$d.Action}}" class="stack">
+        {{if $d.NeedsOdo}}
+        <label class="field">
+          <span class="field-label">Odometer reading</span>
+          <span class="input-group"><span class="addon">km</span><input class="input" type="number" inputmode="numeric" name="odometer" required min="{{if $d.OdoMin}}{{$d.OdoMin}}{{else}}1{{end}}" value="{{if $d.Odo}}{{$d.Odo}}{{end}}" placeholder="{{if $d.OdoMin}}At least {{grouped $d.OdoMin}}{{else}}e.g. 12000{{end}}" data-odometer></span>
+          {{if $d.OdoMin}}<span class="field-hint">It read {{grouped $d.OdoMin}} km at pickup.</span>{{end}}
+        </label>
+        {{else}}<input type="hidden" name="odometer" value="0">{{end}}
+        <div class="swipe" data-swipe data-form="swipe-form" aria-disabled="true" data-done-label="{{$d.DoneLabel}}">
+          <div class="swipe-fill"></div>
+          <span class="swipe-label">{{$d.SwipeLabel}}</span>
+          <button type="button" class="swipe-thumb" aria-label="{{$d.SwipeLabel}}. Or hold Enter for one second.">{{icon "arrow-right"}}</button>
+        </div>
+        <p class="swipe-help">Swipe right, or focus the button and hold Enter for 1 second.</p>
+        <noscript><button class="btn btn-primary btn-block" type="submit">{{$d.SwipeLabel}}</button></noscript>
+      </form>
+    </div>
+  </div>
+</div>
+{{end}}

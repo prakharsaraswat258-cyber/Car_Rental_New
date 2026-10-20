@@ -1,0 +1,27 @@
+{{define "content"}}
+{{$d := .Data}}{{$k := $d.K}}
+<header style="margin-bottom:var(--s-6)"><h1 class="console-title">Overview</h1><p class="muted">Everything on Saarthi, at a glance.</p></header>
+
+<section class="kpis" aria-label="Key numbers" data-stagger>
+  <div class="kpi"><span class="label">{{icon "receipt" "sm"}}Bookings</span><span class="value">{{grouped $k.Bookings}}</span><span class="sub">paid or in progress, all time</span></div>
+  <div class="kpi"><span class="label">{{icon "indian-rupee" "sm"}}Revenue</span><span class="value">{{rupees $k.Revenue}}</span><span class="sub">rent, add-ons and GST · deposits excluded</span></div>
+  <div class="kpi"><span class="label">{{icon "route" "sm"}}Active trips</span><span class="value">{{grouped $k.ActiveTrips}}</span><span class="sub">on the road right now</span></div>
+  <div class="kpi"><span class="label">{{icon "timer" "sm"}}Deposit release</span><span class="value">{{if $k.Released}}{{durWords $k.AvgRelease}}{{else}}—{{end}}</span><span class="sub">average from return to release · {{$k.Released}} trips</span></div>
+</section>
+
+<section style="margin-top:var(--s-8)" aria-labelledby="shops-h">
+  <div class="section-head"><h2 id="shops-h" class="section-title">Shops {{if $k.PendingShops}}<span class="chip chip-status tone-warn">{{$k.PendingShops}} to verify</span>{{end}}</h2></div>
+  <div class="table-wrap"><table class="table">
+    <thead><tr><th>Shop</th><th>Place</th><th class="num">Live / all</th><th>Status</th><th class="actions"><span class="sr-only">Actions</span></th></tr></thead>
+    <tbody>{{range $d.Shops}}{{template "shop-row" .}}{{end}}</tbody>
+  </table></div>
+</section>
+
+<section style="margin-top:var(--s-8)" aria-labelledby="recent-h">
+  <div class="section-head"><h2 id="recent-h" class="section-title">Latest bookings</h2><a class="link small" href="/admin/bookings">All bookings {{icon "arrow-right" "sm"}}</a></div>
+  <div class="table-wrap"><table class="table">
+    <thead><tr><th>Code</th><th>Vehicle</th><th>Renter</th><th>When</th><th>Status</th><th class="num">Total</th></tr></thead>
+    <tbody>{{template "booking-rows" $d.Recent}}</tbody>
+  </table></div>
+</section>
+{{end}}

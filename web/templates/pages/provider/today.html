@@ -1,0 +1,50 @@
+{{define "content"}}
+{{$d := .Data}}
+<header class="stack-2" style="margin-bottom:var(--s-6)">
+  <p class="eyebrow">{{datefull $d.Today}}</p>
+  <h1 class="console-title">Today</h1>
+  {{if .Shop}}{{if ne .Shop.Status "verified"}}<div class="banner tone-warn">{{icon "hourglass"}}<div><b>Verification pending</b>Renters see your vehicles once Saarthi verifies {{.Shop.Name}}. Keep adding vehicles and photos meanwhile.</div></div>{{end}}{{end}}
+</header>
+
+{{if $d.ShowOnboarding}}
+<section class="card" style="margin-bottom:var(--s-6)" aria-labelledby="ob-h">
+  <div class="card-head"><h2 id="ob-h">Get your shop ready</h2></div>
+  <ul class="onboard plain" role="list">
+    {{range $d.Onboarding}}<li class="{{if .Done}}is-done{{end}}"><span class="tick">{{icon "check" "sm"}}</span>{{if and .URL (not .Done)}}<a class="link" href="{{.URL}}">{{.Text}}</a>{{else}}<span>{{.Text}}</span>{{end}}</li>{{end}}
+  </ul>
+</section>
+{{end}}
+
+{{if $d.Quiet}}
+<div class="card">{{template "empty" (dict "Art" "scooter" "Title" "Quiet day. Add photos to boost your listings." "Text" "Requests, pickups and returns show here as they come in." "URL" "/p/fleet" "Label" "Open the fleet")}}</div>
+{{else}}
+<div class="today-grid">
+  <section aria-labelledby="req-h">
+    <div class="card-head"><h2 id="req-h" class="h3">Requests waiting <span class="tab-count">{{len $d.Requests}}</span></h2></div>
+    {{range $d.Requests}}{{template "req-card" .}}{{else}}<p class="small muted card">No requests waiting. Instant-book vehicles confirm on their own.</p>{{end}}
+    {{if $d.Inspect}}
+    <div class="card-head" style="margin-top:var(--s-6)"><h2 class="h3">Waiting for inspection <span class="tab-count">{{len $d.Inspect}}</span></h2></div>
+    {{range $d.Inspect}}{{template "req-card" .}}{{end}}
+    {{end}}
+  </section>
+  <section aria-labelledby="pick-h">
+    <div class="card-head"><h2 id="pick-h" class="h3">Pickups today <span class="tab-count">{{len $d.Pickups}}</span></h2></div>
+    {{range $d.Pickups}}{{template "req-card" .}}{{else}}<p class="small muted card">No pickups left today.</p>{{end}}
+  </section>
+  <section aria-labelledby="ret-h">
+    <div class="card-head"><h2 id="ret-h" class="h3">Returns today <span class="tab-count">{{len $d.Returns}}</span></h2></div>
+    {{range $d.Returns}}{{template "req-card" .}}{{else}}<p class="small muted card">No returns due today.</p>{{end}}
+  </section>
+</div>
+{{end}}
+
+{{if $d.Upcoming}}
+<section style="margin-top:var(--s-8)" aria-labelledby="up-h">
+  <h2 id="up-h" class="section-title">Next 7 days</h2>
+  <div class="table-wrap"><table class="table">
+    <thead><tr><th>Renter</th><th>Vehicle</th><th>When</th><th>Status</th><th class="num">Total</th></tr></thead>
+    <tbody>{{range $d.Upcoming}}<tr><td><a class="link" href="/p/bookings/{{.ID}}">{{.RenterName}}</a></td><td>{{.VehicleName}}</td><td class="nowrap small">{{rangeText .Start .End}}</td><td>{{template "status-chip" .Status}}</td><td class="num">{{rupees .Total}}</td></tr>{{end}}</tbody>
+  </table></div>
+</section>
+{{end}}
+{{end}}

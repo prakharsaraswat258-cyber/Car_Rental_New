@@ -14,7 +14,7 @@ import (
 )
 
 // SessionCookie holds the login token (D-007).
-const SessionCookie = "saarthi_session"
+const SessionCookie = handlers.SessionCookie
 
 // recoverPanics turns a panic into a 500 and a log line with the stack.
 func recoverPanics(log *slog.Logger, next http.Handler) http.Handler {

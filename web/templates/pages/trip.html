@@ -1,0 +1,113 @@
+{{define "content"}}
+{{$d := .Data}}{{$b := $d.B}}
+<div class="container">
+  <header class="page-head stack-2">
+    <a class="link small" href="/trips">{{icon "chevron-left" "sm"}}My trips</a>
+    <div class="row-between" style="align-items:flex-end;flex-wrap:wrap">
+      <div>
+        <h1 class="display h2">{{$b.VehicleName}}</h1>
+        <p class="muted">{{rangeText $b.Start $b.End}} · <span class="mono">{{$b.Code}}</span></p>
+      </div>
+      {{template "status-chip" $b.Status}}
+    </div>
+  </header>
+
+  <div class="split">
+    <div class="stack-6">
+      <section class="card stack">{{template "status-line" $b}}</section>
+
+      {{with $d.Next}}{{if .Title}}
+      <section class="next-step" aria-labelledby="next-h">
+        <h2 id="next-h">{{.Title}}</h2>
+        <p class="muted">{{.Text}}</p>
+        {{if .Sheet}}<div><button class="btn btn-primary btn-lg" type="button" data-sheet-open="{{.Sheet}}">{{.Label}}</button></div>
+        {{else if .URL}}<div><a class="btn btn-primary btn-lg" href="{{.URL}}"{{if eq .Label "Message the shop"}} target="_blank" rel="noopener"{{end}}>{{.Label}}</a></div>{{end}}
+      </section>
+      {{end}}{{end}}
+
+      {{if or (eq $b.Status "confirmed") (eq $b.Status "awaiting_shop") (eq $b.Status "ready")}}
+      <a class="card card-link row-between" href="/trips/{{$b.Code}}/pass"><span class="row">{{icon "ticket"}}<b>Pickup Pass</b></span>{{icon "chevron-right"}}</a>
+      {{end}}
+
+      {{template "deposit-tracker" $d.Deposit}}
+
+      {{if $d.Checkin}}
+      <section aria-labelledby="ph-in"><h2 id="ph-in" class="section-title">Pickup photos {{template "tip" "Photos are timestamped so nobody can blame you later"}}</h2>{{template "photo-grid" $d.Checkin}}</section>
+      {{end}}
+      {{if $d.Return}}
+      <section aria-labelledby="ph-out"><h2 id="ph-out" class="section-title">Return photos</h2>{{template "photo-grid" $d.Return}}</section>
+      {{end}}
+
+      {{with $d.Review}}
+      <section class="card"><div class="row-between"><b>Your review</b><span class="rating">{{icon "star"}}{{.Rating}}</span></div>{{if .Body}}<p class="small" style="margin-top:6px">{{.Body}}</p>{{end}}</section>
+      {{end}}
+    </div>
+
+    <aside class="stack">
+      <section class="card stack">
+        <h2 class="h3">Bill</h2>
+        {{template "bill" $b.Lines}}
+        {{if $b.KmIncluded}}<p class="small muted">{{grouped $b.KmIncluded}} km included · extra {{rupees $b.ExtraKmRate}}/km</p>{{end}}
+        {{if $b.OdoStart}}<p class="small muted">Odometer {{grouped $b.OdoStart}} km at pickup{{if $b.OdoEnd}}, {{grouped $b.OdoEnd}} km at return{{end}}</p>{{end}}
+      </section>
+      <section class="card stack-2">
+        <b>{{$b.ShopName}}</b>
+        <p class="small muted">{{$b.ShopAddress}}</p>
+        <div class="row-wrap">
+          <a class="btn btn-secondary btn-sm" href="{{$b.WhatsApp}}" target="_blank" rel="noopener">{{icon "message-circle" "sm"}}WhatsApp the shop</a>
+          <a class="btn btn-ghost btn-sm" href="{{$b.MapLink}}" target="_blank" rel="noopener">{{icon "map-pin" "sm"}}Map</a>
+        </div>
+      </section>
+      <section class="card">
+        <h2 class="h3" style="margin-bottom:12px">Timeline</h2>
+        <ol class="timeline plain" role="list">{{range $d.Events}}<li><div>{{.Note}}<time>{{date .At}}, {{clock .At}}</time></div></li>{{end}}</ol>
+      </section>
+      {{if $d.CanCancel}}
+      <button class="btn btn-ghost btn-block" type="button" data-sheet-open="cancel-dialog">Cancel booking</button>
+      {{end}}
+    </aside>
+  </div>
+</div>
+
+{{if eq $b.Status "pending_payment"}}
+<dialog class="sheet" id="pay-sheet" data-sheet {{if $d.OpenPay}}data-autoopen{{end}} aria-labelledby="pay-title">
+  <div class="sheet-panel">
+    <div class="sheet-handle" data-sheet-handle></div>
+    <header class="sheet-head"><h2 id="pay-title">Pay (demo)</h2><button class="icon-btn" type="button" data-sheet-close aria-label="Close">{{icon "x"}}</button></header>
+    {{template "pay-body" (dict "B" $b "Error" "")}}
+  </div>
+</dialog>
+{{end}}
+
+{{if $d.CanCancel}}
+<dialog class="dialog" id="cancel-dialog" data-sheet aria-labelledby="cancel-title">
+  <div class="dialog-panel">
+    <h2 id="cancel-title">Cancel this booking?</h2>
+    <p class="muted">{{if $b.DepositStatus}}{{rupees $b.PayNow}} comes back in full, including the deposit.{{else}}Nothing has been charged.{{end}} The slot goes back on the market.</p>
+    <div class="dialog-actions">
+      <button class="btn btn-ghost" type="button" data-sheet-close>Keep it</button>
+      <form method="post" action="/trips/{{$b.Code}}/cancel"><button class="btn btn-danger" type="submit">Cancel booking</button></form>
+    </div>
+  </div>
+</dialog>
+{{end}}
+
+{{if and (eq $b.Status "closed") (not $b.Reviewed)}}
+<dialog class="sheet" id="review-sheet" data-sheet aria-labelledby="rev-title">
+  <div class="sheet-panel">
+    <div class="sheet-handle" data-sheet-handle></div>
+    <header class="sheet-head"><h2 id="rev-title">How was the ride?</h2><button class="icon-btn" type="button" data-sheet-close aria-label="Close">{{icon "x"}}</button></header>
+    <form class="sheet-body stack" method="post" action="/trips/{{$b.Code}}/review" data-submit-loading>
+      <fieldset style="border:0;padding:0;margin:0">
+        <legend class="field-label">Your rating</legend>
+        <div class="stars">
+          {{range $n := (seq 5)}}{{$s := sub 5 $n}}<input type="radio" id="star-{{$s}}" name="rating" value="{{$s}}" required><label for="star-{{$s}}" aria-label="{{$s}} star{{if ne $s 1}}s{{end}}">{{icon "star"}}</label>{{end}}
+        </div>
+      </fieldset>
+      <label class="field"><span class="field-label">A few words (optional)</span><textarea class="input" name="body" maxlength="600" placeholder="What should the next renter know?"></textarea></label>
+      <button class="btn btn-primary btn-block btn-lg" type="submit">{{wheel}}<span>Post review</span></button>
+    </form>
+  </div>
+</dialog>
+{{end}}
+{{end}}

@@ -1,0 +1,11 @@
+{{define "content"}}
+<header class="row-between" style="margin-bottom:var(--s-6);flex-wrap:wrap">
+  <div><h1 class="console-title">Fleet</h1><p class="muted">{{len .Data}} vehicles. Toggle Live to show or hide one from renters.</p></div>
+  <a class="btn btn-primary" href="/p/vehicles/new">{{icon "plus" "sm"}}Add vehicle</a>
+</header>
+{{if .Data}}
+<div class="fleet" data-stagger>{{range .Data}}{{template "fleet-card" .}}{{end}}</div>
+{{else}}
+<div class="card">{{template "empty" (dict "Art" "car" "Title" "No vehicles yet" "Text" "Add your first one in three short steps: basics, photos, pricing." "URL" "/p/vehicles/new" "Label" "Add vehicle")}}</div>
+{{end}}
+{{end}}

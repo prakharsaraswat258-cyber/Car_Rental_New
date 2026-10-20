@@ -1,13 +1,25 @@
-{{/* Provider and admin layout: left sidebar + top bar. Built out in L1/L6. */}}
+{{/* Provider and admin layout: left sidebar + top bar (top strip on mobile). */}}
 {{define "console"}}<!doctype html>
 <html{{template "html-attrs" .}}>
 {{template "head" .}}
-<body class="layout-console">
+<body class="layout-console {{.Body}}" data-sprite="{{asset "/static/img/icons.svg"}}">
   <a class="skip-link" href="#main">Skip to content</a>
-  {{template "topbar" .}}
-  <main id="main" tabindex="-1">
-    {{template "content" .}}
-  </main>
+  <div class="console">
+    {{template "sidebar" .}}
+    <div class="console-main">
+      <header class="console-top">
+        <p class="small muted">{{if .Shop}}{{.Shop.Name}} · {{.Shop.Place}}{{else}}Saarthi admin{{end}}</p>
+        <div class="row">
+          {{template "theme-switch" .}}
+          {{if .User}}<a class="avatar" href="/account" title="{{.User.Email}}" aria-label="Account">{{initial .User.Name}}</a>{{end}}
+        </div>
+      </header>
+      <main id="main" class="console-body" tabindex="-1">
+        {{template "content" .}}
+      </main>
+    </div>
+  </div>
+  {{template "overlays" .}}
   {{template "scripts" .}}
 </body>
 </html>{{end}}

@@ -6,19 +6,20 @@
   <meta name="color-scheme" content="light dark">
   <meta name="theme-color" content="#FAF8F3" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#1B1A18" media="(prefers-color-scheme: dark)">
-  <meta name="htmx-config" content='{"includeIndicatorStyles":false,"allowEval":false,"globalViewTransitions":false,"historyCacheSize":0}'>
+  <meta name="htmx-config" content='{"includeIndicatorStyles":false,"allowEval":false,"historyCacheSize":0,"defaultSwapStyle":"innerHTML","scrollIntoViewOnBoost":false}'>
   <link rel="icon" href="{{asset "/static/img/favicon.svg"}}" type="image/svg+xml">
   <link rel="preload" href="/static/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="/static/fonts/fraunces-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="{{asset "/static/css/tokens.css"}}">
+  <link rel="stylesheet" href="{{asset "/static/vendor/leaflet.css"}}">
   <link rel="stylesheet" href="{{asset "/static/css/app.css"}}">
-  {{block "head-extra" .}}{{end}}
 </head>{{end}}
 
 {{define "scripts"}}
   <script src="{{asset "/static/vendor/htmx.min.js"}}" defer></script>
+  <script src="{{asset "/static/vendor/motion.js"}}" defer></script>
+  <script src="{{asset "/static/vendor/leaflet.js"}}" defer></script>
   <script src="{{asset "/static/js/app.js"}}" type="module"></script>
-  {{block "page-scripts" .}}{{end}}
 {{end}}
 
 {{define "html-attrs"}} lang="en-IN" data-theme-choice="{{.Theme}}"{{if eq .Theme "dark"}} data-theme="dark"{{else if eq .Theme "light"}} data-theme="light"{{end}}{{end}}

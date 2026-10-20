@@ -1,0 +1,16 @@
+{{define "content"}}
+{{$d := .Data}}
+<header style="margin-bottom:var(--s-5)"><h1 class="console-title">Bookings</h1><p class="muted">{{len $d.Bookings}} shown{{if $d.Status}} · {{$d.Status}}{{end}}</p></header>
+<nav class="chips" aria-label="Filter by status" style="margin-bottom:var(--s-5)">
+  <a class="chip chip-sm" href="/admin/bookings" {{if not $d.Status}}aria-pressed="true"{{end}}>All</a>
+  {{range $d.Statuses}}<a class="chip chip-sm" href="/admin/bookings?status={{.}}" {{if eq (printf "%s" .) $d.Status}}aria-pressed="true"{{end}}>{{.Label}}</a>{{end}}
+</nav>
+{{if $d.Bookings}}
+<div class="table-wrap"><table class="table">
+  <thead><tr><th>Code</th><th>Vehicle</th><th>Renter</th><th>When</th><th>Status</th><th class="num">Total</th></tr></thead>
+  <tbody>{{template "booking-rows" $d.Bookings}}</tbody>
+</table></div>
+{{else}}
+<div class="card">{{template "empty" (dict "Art" "car" "Title" "No bookings in this state." "Text" "Try another filter.")}}</div>
+{{end}}
+{{end}}

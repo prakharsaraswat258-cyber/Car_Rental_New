@@ -1,20 +1,20 @@
-{{/* Shared page chrome: top bar, bottom tabs, theme switch, footer. */}}
+{{/* Shared page chrome: top bar, bottom tabs, sidebar, theme switch, footer, overlays. */}}
 
 {{define "topbar"}}
 <header class="topbar">
   <div class="container topbar-inner">
     {{template "brand"}}
     <nav class="topnav" aria-label="Main">
-      <a href="/" {{if eq .Path "/"}}aria-current="page"{{end}}>{{icon "compass"}}Explore</a>
-      <a href="/trips" {{if eq .Path "/trips"}}aria-current="page"{{end}}>{{icon "route"}}Trips</a>
+      <a href="/" {{if eq .Nav "explore"}}aria-current="page"{{end}}>{{icon "compass"}}Explore</a>
+      <a href="/trips" {{if eq .Nav "trips"}}aria-current="page"{{end}}>{{icon "route"}}Trips</a>
       {{if .User}}{{if .User.IsProvider}}<a href="/p">{{icon "store"}}My shop</a>{{end}}{{if .User.IsAdmin}}<a href="/admin">{{icon "layout-dashboard"}}Admin</a>{{end}}{{end}}
     </nav>
     <div class="topbar-end">
       {{template "theme-switch" .}}
       {{if .User}}
-        <span class="small muted" title="{{.User.Email}}">{{.User.FirstName}}</span>
+        <a class="avatar" href="/account" title="{{.User.Email}}" aria-label="Account: {{.User.Name}}">{{initial .User.Name}}</a>
       {{else}}
-        <a class="btn btn-secondary btn-sm" href="/login">Log in</a>
+        <a class="btn btn-secondary btn-sm" href="/login{{if ne .Path "/login"}}?next={{.Path}}{{end}}">Log in</a>
       {{end}}
     </div>
   </div>
@@ -23,10 +23,41 @@
 
 {{define "tabbar"}}
 <nav class="tabbar" aria-label="Main">
-  <a href="/" {{if eq .Path "/"}}aria-current="page"{{end}}>{{icon "compass"}}<span>Explore</span></a>
-  <a href="/trips" {{if eq .Path "/trips"}}aria-current="page"{{end}}>{{icon "route"}}<span>Trips</span></a>
-  <a href="{{if .User}}/account{{else}}/login{{end}}" {{if eq .Path "/account"}}aria-current="page"{{end}}>{{icon "circle-user"}}<span>Account</span></a>
+  <a href="/" {{if eq .Nav "explore"}}aria-current="page"{{end}}>{{icon "compass"}}<span>Explore</span></a>
+  <a href="/trips" {{if eq .Nav "trips"}}aria-current="page"{{end}}>{{icon "route"}}<span>Trips</span></a>
+  <a href="{{if .User}}/account{{else}}/login{{end}}" {{if eq .Nav "account"}}aria-current="page"{{end}}>{{icon "circle-user"}}<span>Account</span></a>
 </nav>
+{{end}}
+
+{{define "sidebar"}}
+<aside class="side" aria-label="Console">
+  {{template "brand"}}
+  {{if and .User .User.IsAdmin}}
+  <nav class="side-nav" aria-label="Admin">
+    <a href="/admin" {{if eq .Nav "admin"}}aria-current="page"{{end}}>{{icon "layout-dashboard"}}Overview</a>
+    <a href="/admin/bookings" {{if eq .Nav "admin-bookings"}}aria-current="page"{{end}}>{{icon "receipt"}}Bookings</a>
+    <a href="/" class="side-mobile-only">{{icon "compass"}}Explore</a>
+  </nav>
+  {{else}}
+  <nav class="side-nav" aria-label="Shop">
+    <a href="/p" {{if eq .Nav "today"}}aria-current="page"{{end}}>{{icon "sunrise"}}Today</a>
+    <a href="/p/fleet" {{if eq .Nav "fleet"}}aria-current="page"{{end}}>{{icon "car-front"}}Fleet</a>
+    <a href="/p/calendar" {{if eq .Nav "calendar"}}aria-current="page"{{end}}>{{icon "calendar-days"}}Calendar</a>
+    <a href="/account" class="side-mobile-only">{{icon "circle-user"}}Account</a>
+  </nav>
+  {{if .Shop}}
+  <div class="side-shop">
+    <b>{{.Shop.Name}}</b>
+    <span class="muted">{{.Shop.Place}}</span>
+    <span>{{if eq .Shop.Status "verified"}}<span class="chip chip-status tone-good">Verified</span>{{else if eq .Shop.Status "pending"}}<span class="chip chip-status tone-warn">Verification pending</span>{{else}}<span class="chip chip-status tone-bad">Suspended</span>{{end}}</span>
+  </div>
+  {{end}}
+  {{end}}
+  <div class="side-foot">
+    <a class="menu-link" href="/">{{icon "external-link" "sm"}}Open the renter site</a>
+    <form method="post" action="/logout"><button class="menu-link" type="submit">{{icon "log-out" "sm"}}Log out</button></form>
+  </div>
+</aside>
 {{end}}
 
 {{/* Works without JS (form POST); theme.js upgrades it to an instant switch. */}}
@@ -40,8 +71,32 @@
 
 {{define "footer"}}
 <footer class="site-footer">
-  <div class="container">
+  <div class="container row-between">
     <p>Saarthi is a demo. Payments, SMS and email are simulated. Vehicle art is original line-work.</p>
+    <div class="row-wrap">
+      <a class="link" href="/dev/styleguide">Styleguide</a>
+      {{if not .User}}<a class="link" href="/signup?role=provider">List your shop</a>{{end}}
+    </div>
   </div>
 </footer>
+{{end}}
+
+{{define "overlays"}}
+<div class="toasts" id="toasts" aria-live="polite" data-flash="{{.Flash}}"></div>
+<div class="loader" id="loader" role="status" aria-live="polite"><span class="wheel-loader">{{wheel}}<span class="road"></span></span><span>One moment</span></div>
+<div id="sheet-root"></div>
+{{if not .User}}{{template "login-sheet" .}}{{end}}
+{{end}}
+
+{{define "login-sheet"}}
+<dialog class="sheet" id="login-sheet" data-sheet aria-labelledby="login-sheet-title">
+  <div class="sheet-panel">
+    <div class="sheet-handle" data-sheet-handle></div>
+    <header class="sheet-head"><h2 id="login-sheet-title">Log in to book</h2><button class="icon-btn" type="button" data-sheet-close aria-label="Close">{{icon "x"}}</button></header>
+    <div class="sheet-body stack">
+      <p class="muted small">Your dates and add-ons are kept. One tap on a demo account works too.</p>
+      {{template "login-form" (dict "Next" .Path "Email" "" "Error" "")}}
+    </div>
+  </div>
+</dialog>
 {{end}}

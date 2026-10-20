@@ -175,15 +175,21 @@ func (v *Views) funcs() template.FuncMap {
 			return template.HTML(`<svg class="` + cls + `" aria-hidden="true" focusable="false"><use href="` +
 				v.asset("/static/img/icons.svg") + `#` + name + `"></use></svg>`)
 		},
-		"date":      func(t time.Time) string { return t.In(domain.IST).Format("Mon 2 Jan") },
+		"date":      domain.DayText,
 		"datefull":  func(t time.Time) string { return t.In(domain.IST).Format("Mon 2 Jan 2006") },
-		"clock":     clock,
-		"when":      func(t time.Time) string { return t.In(domain.IST).Format("Mon 2 Jan") + ", " + clock(t) },
+		"clock":     domain.Clock,
+		"when":      func(t time.Time) string { return domain.DayText(t) + ", " + domain.Clock(t) },
 		"isodate":   func(t time.Time) string { return t.In(domain.IST).Format("2006-01-02") },
+		"local":     domain.FormatLocal,
+		"rangeText": domain.RangeText,
+		"durWords":  domain.DurationWords,
 		"typeLabel": domain.TypeLabel,
+		"art":       art,
+		"wheel":     wheel,
 		"dict":      dict,
 		"add":       func(a, b int) int { return a + b },
 		"sub":       func(a, b int) int { return a - b },
+		"mul":       func(a, b int) int { return a * b },
 		"seq": func(n int) []int {
 			s := make([]int, n)
 			for i := range s {
@@ -192,6 +198,27 @@ func (v *Views) funcs() template.FuncMap {
 			return s
 		},
 		"lower": strings.ToLower,
+		"initial": func(s string) string {
+			r := []rune(strings.TrimSpace(s))
+			if len(r) == 0 {
+				return "?"
+			}
+			return strings.ToUpper(string(r[0]))
+		},
+		"pct":        func(f float64) string { return fmt.Sprintf("%.3f%%", f) },
+		"stepLabels": func() [6]string { return domain.TripSteps },
+		"has":        contains,
+		// tel builds a tel: link; only digits and + survive, so it is safe.
+		"tel": func(s string) template.URL {
+			return template.URL("tel:" + strings.Map(func(r rune) rune {
+				if r == '+' || r >= '0' && r <= '9' {
+					return r
+				}
+				return -1
+			}, s))
+		},
+		"json":       toJSON,
+		"angleLabel": angleLabel,
 		"split": func(s, sep string) []string {
 			if strings.TrimSpace(s) == "" {
 				return nil
@@ -204,24 +231,6 @@ func (v *Views) funcs() template.FuncMap {
 		},
 		"year": func() int { return time.Now().In(domain.IST).Year() },
 	}
-}
-
-// clock renders "9 am", "9:30 pm", "12 pm".
-func clock(t time.Time) string {
-	t = t.In(domain.IST)
-	h, m := t.Hour(), t.Minute()
-	suffix := "am"
-	if h >= 12 {
-		suffix = "pm"
-	}
-	h12 := h % 12
-	if h12 == 0 {
-		h12 = 12
-	}
-	if m == 0 {
-		return fmt.Sprintf("%d %s", h12, suffix)
-	}
-	return fmt.Sprintf("%d:%02d %s", h12, m, suffix)
 }
 
 func rupees(v any) string { return domain.Paise(toInt64(v)).String() }

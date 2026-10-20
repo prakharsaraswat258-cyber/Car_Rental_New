@@ -1,0 +1,21 @@
+{{define "content"}}
+{{$d := .Data}}
+<header class="row-between" style="margin-bottom:var(--s-5);flex-wrap:wrap">
+  <div>
+    <h1 class="console-title">Calendar</h1>
+    <p class="muted">{{$d.Title}}. Tap a start day, then an end day on a row to block it. Tap a grey block to remove it.</p>
+  </div>
+  <div class="row">
+    <a class="icon-btn" href="{{$d.PrevURL}}" aria-label="Previous week">{{icon "chevron-left"}}</a>
+    <a class="btn btn-secondary btn-sm" href="/p/calendar">Today</a>
+    <a class="icon-btn" href="{{$d.NextURL}}" aria-label="Next week">{{icon "chevron-right"}}</a>
+  </div>
+</header>
+<div class="cal-legend" style="margin-bottom:12px">
+  <span><i style="background:var(--road)"></i>Booked</span>
+  <span><i style="background:var(--warn)"></i>Waiting for you</span>
+  <span><i style="background:color-mix(in srgb, var(--road) 45%, var(--surface))"></i>Returned</span>
+  <span><i style="background:repeating-linear-gradient(135deg, var(--paper-2) 0 4px, var(--line) 4px 8px);border:1px solid var(--line-2)"></i>Blocked</span>
+</div>
+{{template "pcal" $d}}
+{{end}}

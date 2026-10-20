@@ -1,0 +1,43 @@
+{{define "content"}}
+{{$d := .Data}}
+<div class="container">
+  <header class="page-head"><h1 class="display h2">My trips</h1></header>
+
+  {{if $d.Live}}{{$b := $d.Live}}
+  <a class="card live-card card-link" href="/trips/{{$b.Code}}" aria-label="Live trip: {{$b.VehicleName}}">
+    <div class="live-top">
+      <div><span class="live-dot">On trip now</span><h2 class="h3" style="margin-top:6px">{{$b.VehicleName}}</h2><p class="small muted">Due back {{date $b.End}}, {{clock $b.End}} · {{$b.ShopName}}</p></div>
+      <div class="trip-card" style="padding:0;grid-template-columns:96px"><div class="media tint-{{$b.Art}}">{{template "media" (dict "Cover" $b.Cover "Art" $b.Art "Name" "")}}</div></div>
+    </div>
+    {{template "status-line" $b}}
+  </a>
+  {{end}}
+
+  <nav class="tabs" aria-label="Trips" style="margin-top:var(--s-6)">
+    <a class="tab" href="/trips?tab=upcoming" {{if eq $d.Tab "upcoming"}}aria-current="page"{{end}}>Upcoming <span class="tab-count">{{$d.Upcoming}}</span></a>
+    <a class="tab" href="/trips?tab=active" {{if eq $d.Tab "active"}}aria-current="page"{{end}}>Active <span class="tab-count">{{$d.Active}}</span></a>
+    <a class="tab" href="/trips?tab=past" {{if eq $d.Tab "past"}}aria-current="page"{{end}}>Past <span class="tab-count">{{$d.Past}}</span></a>
+  </nav>
+
+  <div class="stack-3" style="margin-top:var(--s-5)" data-stagger>
+    {{range $d.Trips}}
+    <a class="card card-flush card-link trip-card" href="/trips/{{.Code}}">
+      <div class="media tint-{{.Art}}">{{template "media" (dict "Cover" .Cover "Art" .Art "Name" "")}}</div>
+      <div class="stack-2">
+        <div class="row-between"><h3>{{.VehicleName}}</h3>{{template "status-chip" .Status}}</div>
+        <p class="small muted">{{rangeText .Start .End}} · {{.ShopName}}</p>
+        <p class="small"><b class="num">{{rupees .Total}}</b> total · <span class="mono muted">{{.Code}}</span>{{if and (eq .Status "closed") (not .Reviewed)}} · <span class="link">Rate this trip</span>{{end}}</p>
+      </div>
+    </a>
+    {{else}}
+      {{if eq $d.Tab "upcoming"}}
+      {{template "empty" (dict "Art" "scooter" "Title" "No trips yet. Where to first?" "Text" "Describe the trip like a text and Saarthi finds what's free." "URL" "/" "Label" "Find a ride")}}
+      {{else if eq $d.Tab "active"}}
+      {{template "empty" (dict "Art" "bike" "Title" "Nothing on the road right now." "Text" "Trips show here from pickup until the deposit is back.")}}
+      {{else}}
+      {{template "empty" (dict "Art" "cycle" "Title" "No past trips yet." "Text" "Closed trips and their receipts live here.")}}
+      {{end}}
+    {{end}}
+  </div>
+</div>
+{{end}}

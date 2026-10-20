@@ -54,9 +54,78 @@ func New(cfg Config) (http.Handler, error) {
 		http.Redirect(w, r, "/static/img/favicon.svg", http.StatusMovedPermanently)
 	})
 
+	renter := func(f http.HandlerFunc) http.HandlerFunc { return requireRole(h, f, store.RoleRenter) }
+	provider := func(f http.HandlerFunc) http.HandlerFunc { return requireRole(h, f, store.RoleProvider) }
+	admin := func(f http.HandlerFunc) http.HandlerFunc { return requireRole(h, f, store.RoleAdmin) }
+	anyone := func(f http.HandlerFunc) http.HandlerFunc {
+		return requireRole(h, f, store.RoleRenter, store.RoleProvider, store.RoleAdmin)
+	}
+
 	// Public
 	mux.HandleFunc("GET /{$}", h.Home)
+	mux.HandleFunc("POST /ask", h.Ask)
+	mux.HandleFunc("GET /search", h.Search)
+	mux.HandleFunc("GET /v/{id}", h.Vehicle)
+	mux.HandleFunc("GET /v/{id}/quote", h.Quote)
+	mux.HandleFunc("GET /v/{id}/calendar", h.Calendar)
+	mux.HandleFunc("GET /compare", h.Compare)
+	mux.HandleFunc("POST /compare/{id}", h.CompareAdd)
+	mux.HandleFunc("DELETE /compare/{id}", h.CompareRemove)
+	mux.HandleFunc("POST /compare/{id}/remove", h.CompareRemove)
+	mux.HandleFunc("GET /login", h.LoginPage)
+	mux.HandleFunc("POST /login", h.Login)
+	mux.HandleFunc("POST /login/demo/{role}", h.DemoLogin)
+	mux.HandleFunc("GET /signup", h.SignupPage)
+	mux.HandleFunc("POST /signup", h.Signup)
+	mux.HandleFunc("POST /logout", h.Logout)
+	mux.HandleFunc("GET /dev/styleguide", h.Styleguide)
 	mux.HandleFunc("POST /theme", h.SetTheme)
+	mux.HandleFunc("GET /vphotos/{id}", h.VehiclePhoto)
+	mux.HandleFunc("GET /photos/{id}", h.TripPhoto) // owner / shop / admin checked inside
+	mux.HandleFunc("GET /account", anyone(h.Account))
+
+	// Renter
+	mux.HandleFunc("GET /checkout/{vehicleID}", renter(h.Checkout))
+	mux.HandleFunc("POST /bookings", renter(h.CreateBooking))
+	mux.HandleFunc("POST /bookings/{code}/pay", renter(h.Pay))
+	mux.HandleFunc("GET /trips", renter(h.Trips))
+	mux.HandleFunc("GET /trips/{code}", renter(h.Trip))
+	mux.HandleFunc("GET /trips/{code}/pass", renter(h.Pass))
+	mux.HandleFunc("GET /trips/{code}/pass.ics", renter(h.PassICS))
+	mux.HandleFunc("GET /trips/{code}/deposit", renter(h.DepositFragment))
+	mux.HandleFunc("POST /trips/{code}/cancel", renter(h.CancelTrip))
+	mux.HandleFunc("GET /trips/{code}/checkin", renter(h.CheckinPage("checkin")))
+	mux.HandleFunc("GET /trips/{code}/return", renter(h.CheckinPage("return")))
+	mux.HandleFunc("POST /trips/{code}/photos", renter(h.UploadTripPhoto))
+	mux.HandleFunc("POST /trips/{code}/start", renter(h.StartTrip))
+	mux.HandleFunc("POST /trips/{code}/end", renter(h.EndTrip))
+	mux.HandleFunc("POST /trips/{code}/review", renter(h.Review))
+
+	// Provider
+	mux.HandleFunc("GET /p", provider(h.ProviderToday))
+	mux.HandleFunc("GET /p/bookings/{id}", provider(h.ProviderBooking))
+	mux.HandleFunc("POST /p/bookings/{id}/accept", provider(h.ProviderMove(store.ShopAccept)))
+	mux.HandleFunc("POST /p/bookings/{id}/decline", provider(h.ProviderMove(store.ShopDecline)))
+	mux.HandleFunc("POST /p/bookings/{id}/ready", provider(h.ProviderMove(store.ShopReady)))
+	mux.HandleFunc("GET /p/bookings/{id}/inspect", provider(h.InspectPage))
+	mux.HandleFunc("POST /p/bookings/{id}/inspect", provider(h.Inspect))
+	mux.HandleFunc("GET /p/fleet", provider(h.ProviderFleet))
+	mux.HandleFunc("GET /p/vehicles/new", provider(h.VehicleNew))
+	mux.HandleFunc("POST /p/vehicles/new", provider(h.VehicleCreate))
+	mux.HandleFunc("GET /p/vehicles/{id}/edit", provider(h.VehicleEdit))
+	mux.HandleFunc("POST /p/vehicles/{id}/edit", provider(h.VehicleUpdate))
+	mux.HandleFunc("POST /p/vehicles/{id}/photos", provider(h.VehiclePhotoUpload))
+	mux.HandleFunc("POST /p/vehicles/{id}/photos/{pid}/delete", provider(h.VehiclePhotoDelete))
+	mux.HandleFunc("POST /p/vehicles/{id}/status", provider(h.VehicleStatus))
+	mux.HandleFunc("GET /p/calendar", provider(h.ProviderCalendar))
+	mux.HandleFunc("POST /p/blocks", provider(h.CreateBlock))
+	mux.HandleFunc("DELETE /p/blocks/{id}", provider(h.DeleteBlock))
+
+	// Admin
+	mux.HandleFunc("GET /admin", admin(h.Admin))
+	mux.HandleFunc("POST /admin/shops/{id}/verify", admin(h.AdminShopStatus("verified")))
+	mux.HandleFunc("POST /admin/shops/{id}/suspend", admin(h.AdminShopStatus("suspended")))
+	mux.HandleFunc("GET /admin/bookings", admin(h.AdminBookings))
 
 	// Everything else
 	mux.HandleFunc("/", h.NotFound)

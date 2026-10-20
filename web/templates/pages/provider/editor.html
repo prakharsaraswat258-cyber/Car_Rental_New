@@ -1,0 +1,118 @@
+{{define "content"}}
+{{$d := .Data}}{{$in := $d.In}}
+<header class="stack-2" style="margin-bottom:var(--s-6)">
+  <a class="link small" href="/p/fleet">{{icon "chevron-left" "sm"}}Fleet</a>
+  <div class="row-between" style="flex-wrap:wrap">
+    <h1 class="console-title">{{if $d.IsNew}}Add a vehicle{{else}}{{$d.V.Name}}{{end}}</h1>
+    {{if not $d.IsNew}}{{template "vehicle-status-chip" $d.V}}{{end}}
+  </div>
+</header>
+
+<div class="stepper" role="tablist" data-steps>
+  <button type="button" role="tab" data-step-btn="basics" aria-selected="{{if eq $d.Step "basics"}}true{{else}}false{{end}}" class="{{if and $in.Make $in.Model}}is-done{{end}}"><small>Step 1</small><b>Basics</b></button>
+  <button type="button" role="tab" data-step-btn="photos" aria-selected="{{if eq $d.Step "photos"}}true{{else}}false{{end}}" class="{{if $d.V.Photos}}is-done{{end}}" {{if $d.IsNew}}disabled title="Save the basics first"{{end}}><small>Step 2</small><b>Photos</b></button>
+  <button type="button" role="tab" data-step-btn="pricing" aria-selected="{{if eq $d.Step "pricing"}}true{{else}}false{{end}}" class="{{if and $in.Hourly $in.Daily}}is-done{{end}}"><small>Step 3</small><b>Pricing</b></button>
+</div>
+
+<div class="editor" data-editor>
+  <div>
+    <form id="vehicle-form" method="post" action="{{$d.Action}}" class="stack-6" data-submit-loading novalidate>
+      <input type="hidden" name="step" value="{{$d.Step}}" data-step-input>
+      {{with index $d.Errors "publish"}}{{template "form-error" .}}{{end}}
+
+      <section class="step-panel card stack" data-step-panel="basics" {{if ne $d.Step "basics"}}hidden{{end}}>
+        <h2 class="h3">Basics</h2>
+        <div class="field">
+          <span class="field-label">Type</span>
+          <div class="row-wrap">
+            <label class="chip chip-filter"><input type="radio" name="type" value="scooter" {{if eq $in.Type "scooter"}}checked{{end}} data-preview="type"><span>Scooter</span></label>
+            <label class="chip chip-filter"><input type="radio" name="type" value="bike" {{if eq $in.Type "bike"}}checked{{end}} data-preview="type"><span>Bike</span></label>
+            <label class="chip chip-filter"><input type="radio" name="type" value="car" {{if eq $in.Type "car"}}checked{{end}} data-preview="type"><span>Car</span></label>
+            <label class="chip chip-filter"><input type="radio" name="type" value="ev" {{if eq $in.Type "ev"}}checked{{end}} data-preview="type"><span>EV</span></label>
+            <label class="chip chip-filter"><input type="radio" name="type" value="cycle" {{if eq $in.Type "cycle"}}checked{{end}} data-preview="type"><span>Cycle</span></label>
+          </div>
+          {{with index $d.Errors "type"}}<span class="field-error">{{.}}</span>{{end}}
+        </div>
+        <div class="form-grid two">
+          <label class="field"><span class="field-label">Make</span><input class="input" name="make" value="{{$in.Make}}" placeholder="Honda" required data-preview="make" {{if index $d.Errors "make"}}aria-invalid="true"{{end}}>{{with index $d.Errors "make"}}<span class="field-error">{{.}}</span>{{end}}</label>
+          <label class="field"><span class="field-label">Model</span><input class="input" name="model" value="{{$in.Model}}" placeholder="Activa 6G" required data-preview="model" {{if index $d.Errors "model"}}aria-invalid="true"{{end}}>{{with index $d.Errors "model"}}<span class="field-error">{{.}}</span>{{end}}</label>
+        </div>
+        <div class="form-grid three">
+          <label class="field"><span class="field-label">Year</span><input class="input" type="number" name="year" value="{{if $in.Year}}{{$in.Year}}{{end}}" min="1990" max="2030" inputmode="numeric"></label>
+          <label class="field"><span class="field-label">Seats</span><input class="input" type="number" name="seats" value="{{$in.Seats}}" min="1" max="9" inputmode="numeric" data-preview="seats"></label>
+          <label class="field"><span class="field-label">Registration</span><input class="input" name="reg" value="{{$in.Reg}}" placeholder="RJ 38 SA 0000" autocapitalize="characters"></label>
+        </div>
+        <div class="form-grid two">
+          <label class="field"><span class="field-label">Fuel</span><select class="input" name="fuel" data-preview="fuel">
+            <option value="petrol" {{if eq $in.Fuel "petrol"}}selected{{end}}>Petrol</option><option value="diesel" {{if eq $in.Fuel "diesel"}}selected{{end}}>Diesel</option>
+            <option value="electric" {{if eq $in.Fuel "electric"}}selected{{end}}>Electric</option><option value="none" {{if eq $in.Fuel "none"}}selected{{end}}>None (cycle)</option></select></label>
+          <label class="field"><span class="field-label">Gears</span><select class="input" name="trans">
+            <option value="automatic" {{if eq $in.Trans "automatic"}}selected{{end}}>Automatic</option><option value="manual" {{if eq $in.Trans "manual"}}selected{{end}}>Manual</option>
+            <option value="none" {{if eq $in.Trans "none"}}selected{{end}}>None</option></select></label>
+        </div>
+        <label class="field"><span class="field-label">What's included</span><input class="input" name="features" value="{{$d.Features}}" placeholder="Helmet included, Phone charger"><span class="field-hint">Separate with commas.</span></label>
+        <label class="field"><span class="field-label">Description</span><textarea class="input" name="description" maxlength="400" placeholder="One or two plain sentences: who it suits, where it shines.">{{$in.Description}}</textarea></label>
+        <div class="row" style="justify-content:flex-end">
+          {{if $d.IsNew}}<button class="btn btn-primary" type="submit">{{wheel}}<span>Save and add photos</span></button>
+          {{else}}<button class="btn btn-secondary" type="button" data-step-next="photos">Next: photos {{icon "arrow-right" "sm"}}</button>{{end}}
+        </div>
+      </section>
+
+      <section class="step-panel card stack" data-step-panel="pricing" {{if ne $d.Step "pricing"}}hidden{{end}}>
+        <h2 class="h3">Pricing</h2>
+        <div class="form-grid three">
+          <label class="field"><span class="field-label">Per hour</span><span class="input-group"><span class="addon">₹</span><input class="input" type="number" name="hourly" value="{{if $in.Hourly}}{{$in.Hourly.WholeRupees}}{{end}}" min="0" step="5" inputmode="numeric" data-preview="hourly"></span>{{with index $d.Errors "hourly"}}<span class="field-error">{{.}}</span>{{end}}</label>
+          <label class="field"><span class="field-label">Per day (cap)</span><span class="input-group"><span class="addon">₹</span><input class="input" type="number" name="daily" value="{{if $in.Daily}}{{$in.Daily.WholeRupees}}{{end}}" min="0" step="10" inputmode="numeric" data-preview="daily"></span><span class="field-hint">A day never costs more than this.</span></label>
+          <label class="field"><span class="field-label">Refundable deposit</span><span class="input-group"><span class="addon">₹</span><input class="input" type="number" name="deposit" value="{{if $in.Deposit}}{{$in.Deposit.WholeRupees}}{{end}}" min="0" step="100" inputmode="numeric" data-preview="deposit"></span></label>
+        </div>
+        <div class="form-grid three">
+          <label class="field"><span class="field-label">Free km a day</span><input class="input" type="number" name="km" value="{{$in.KmPerDay}}" min="0" step="10" inputmode="numeric" data-preview="km"><span class="field-hint">0 means unlimited.</span></label>
+          <label class="field"><span class="field-label">Extra km</span><span class="input-group"><span class="addon">₹</span><input class="input" type="number" name="extra_km" value="{{if $in.ExtraKm}}{{$in.ExtraKm.WholeRupees}}{{end}}" min="0" inputmode="numeric"></span></label>
+          <label class="field"><span class="field-label">Late fee per hour</span><span class="input-group"><span class="addon">₹</span><input class="input" type="number" name="late_fee" value="{{if $in.LateFee}}{{$in.LateFee.WholeRupees}}{{end}}" min="0" step="10" inputmode="numeric"></span><span class="field-hint">After 30 min grace.</span></label>
+        </div>
+        <div class="form-grid two">
+          <label class="field"><span class="field-label">Minimum hours</span><input class="input" type="number" name="min_hours" value="{{$in.MinHours}}" min="1" max="24" inputmode="numeric"></label>
+          <div class="field"><span class="field-label">Booking</span>
+            <label class="switch"><input type="checkbox" name="instant" {{if $in.InstantBook}}checked{{end}}><span class="switch-track"><span class="switch-thumb"></span></span><span>Instant book <span class="small muted">· off means you accept each request</span></span></label>
+          </div>
+        </div>
+        <ul class="publish-gate plain" role="list" data-gate>
+          {{range $d.Gate}}<li class="{{if .Done}}is-done{{end}}">{{if .Done}}{{icon "circle-check" "sm"}}{{else}}{{icon "circle-dot" "sm"}}{{end}}{{.Text}}</li>{{end}}
+        </ul>
+        <div class="row" style="justify-content:flex-end;flex-wrap:wrap">
+          {{if $d.IsNew}}<button class="btn btn-primary" type="submit">{{wheel}}<span>Save and add photos</span></button>
+          {{else}}
+          <button class="btn btn-secondary" type="submit" name="action" value="save">{{wheel}}<span>Save</span></button>
+          {{if ne $d.V.Status "live"}}<button class="btn btn-primary" type="submit" name="action" value="publish" data-publish {{if not $d.CanPublish}}disabled{{end}}>{{wheel}}<span>Publish</span></button>{{end}}
+          {{end}}
+        </div>
+      </section>
+    </form>
+
+    {{if not $d.IsNew}}
+    <section class="step-panel card stack" data-step-panel="photos" {{if ne $d.Step "photos"}}hidden{{end}}>
+      <h2 class="h3">Photos</h2>
+      <p class="small muted">Daylight, the whole vehicle in frame, a clean background. The first photo is the cover.</p>
+      {{template "photo-manage" $d.V}}
+      <div class="row" style="justify-content:flex-end"><button class="btn btn-secondary" type="button" data-step-next="pricing">Next: pricing {{icon "arrow-right" "sm"}}</button></div>
+    </section>
+    {{end}}
+  </div>
+
+  <aside class="editor-preview stack-3" aria-label="Live preview">
+    <p class="eyebrow">How renters see it</p>
+    <article class="vcard" data-preview-card>
+      <div class="vcard-media tint-{{if $d.V.ID}}{{$d.V.Art}}{{else}}scooter{{end}}" data-preview-media>
+        {{if $d.V.Cover}}<img src="{{$d.V.Cover}}" alt="" data-preview-photo>{{end}}
+        {{range $d.Arts}}<div data-preview-art="{{.}}" {{if $d.V.Cover}}hidden{{end}}>{{art .}}</div>{{end}}
+      </div>
+      <div class="vcard-body">
+        <div class="vcard-top"><h3 class="vcard-title" data-preview-out="name">{{if $in.Make}}{{$in.Make}} {{$in.Model}}{{else}}New vehicle{{end}}</h3><span class="rating">{{icon "star"}}New</span></div>
+        <p class="vcard-meta" data-preview-out="meta">{{if .Shop}}{{.Shop.Name}}, {{.Shop.Place}}{{end}}</p>
+        <div class="vcard-price"><span class="price-total" data-preview-out="daily">{{if $in.Daily}}{{rupees $in.Daily}}{{else}}₹0{{end}}</span><span class="small muted">a day + GST</span></div>
+        <p class="vcard-fine"><span data-preview-out="deposit">{{rupees $in.Deposit}}</span> refundable deposit · <span data-preview-out="km">{{if $in.KmPerDay}}{{$in.KmPerDay}} km a day{{else}}unlimited km{{end}}</span></p>
+      </div>
+    </article>
+  </aside>
+</div>
+{{end}}

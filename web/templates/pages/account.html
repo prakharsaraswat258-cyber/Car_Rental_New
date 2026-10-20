@@ -1,0 +1,20 @@
+{{define "content"}}
+{{$u := .User}}
+<div class="container narrow">
+  <header class="page-head"><h1 class="display h2">Hi, {{$u.FirstName}}</h1><p class="lead">{{$u.Email}}</p></header>
+  <div class="stack">
+    <section class="card">
+      <dl class="dl">
+        <div><dt>Name</dt><dd>{{$u.Name}}</dd></div>
+        <div><dt>Phone</dt><dd>{{if $u.Phone}}{{$u.Phone}}{{else}}—{{end}}</dd></div>
+        <div><dt>Account</dt><dd>{{if $u.IsProvider}}Shop owner{{else if $u.IsAdmin}}Admin{{else}}Renter{{end}}</dd></div>
+        {{if $u.IsRenter}}<div><dt>Licence check</dt><dd>{{if eq $u.LicenceStatus "verified"}}<span class="chip chip-status tone-good">Done</span>{{else}}<span class="chip chip-status tone-warn">At your first pickup</span>{{end}}</dd></div>{{end}}
+      </dl>
+    </section>
+    {{if .Data}}<section class="card row-between"><div><b>{{.Data.Name}}</b><p class="small muted">{{.Data.Place}}</p></div><a class="btn btn-secondary btn-sm" href="/p">Open shop console</a></section>{{end}}
+    {{if $u.IsAdmin}}<section class="card row-between"><b>Admin console</b><a class="btn btn-secondary btn-sm" href="/admin">Open</a></section>{{end}}
+    <section class="card row-between"><div><b>Theme</b><p class="small muted">Light, dark, or match your device.</p></div>{{template "theme-switch" .}}</section>
+    <form method="post" action="/logout"><button class="btn btn-danger btn-block" type="submit">{{icon "log-out" "sm"}}Log out</button></form>
+  </div>
+</div>
+{{end}}
