@@ -77,7 +77,8 @@ Domain rules (pricing, Ask Saarthi parser, booking states, deposit settlement) h
 ## Layout
 
 ```
-cmd/saarthi/          main: flags, server, graceful shutdown
+cmd/saarthi/          main (run this locally); flags and startup live in internal/app/run.go
+cmd/server/           same main, at the path Vercel's Go preset expects
 internal/app/         routes, middleware (session, role guard, CSP, same-origin, logging, recover)
 internal/handlers/    HTTP handlers, view models, template renderer, vehicle line-art
 internal/domain/      pure rules + tests: money, pricing, booking states, deposit, askparser/
@@ -93,7 +94,7 @@ Third-party front-end files are vendored in `web/static/vendor` and `web/static/
 
 GitHub keeps the code; it can't run a Go server (GitHub Pages is static files only).
 
-**Vercel** (set up in `vercel.json`): import the repo, and every push to `main` deploys. Vercel's Go preset builds `./cmd/saarthi` and runs it as a server on `$PORT`. Vercel's disk is read-only except `/tmp`, so each new server instance seeds fresh demo data there. Bookings you make last while that instance is warm (minutes of idle time), then the demo resets. If Vercel runs two instances at once, they don't share data, so you may be logged out. That's fine for a demo; for lasting data, use a host with a disk.
+**Vercel** (set up in `vercel.json`): import the repo, and every push to `main` deploys. Vercel's Go preset builds `./cmd/server` (the same app as `./cmd/saarthi`, at the path Vercel looks for) and runs it as a server on `$PORT`. Vercel's disk is read-only except `/tmp`, so each new server instance seeds fresh demo data there. Bookings you make last while that instance is warm (minutes of idle time), then the demo resets. If Vercel runs two instances at once, they don't share data, so you may be logged out. That's fine for a demo; for lasting data, use a host with a disk.
 
 **Anywhere else**: run `go run ./cmd/saarthi` (or a built binary) on a host that runs Go and gives it a disk for `data/`. `$PORT` sets the port, `$SAARTHI_DATA` the data folder.
 
