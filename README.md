@@ -1,5 +1,7 @@
 # Saarthi
 
+[![CI](https://github.com/prakharsaraswat258-cyber/Car_Rental_New/actions/workflows/ci.yml/badge.svg)](https://github.com/prakharsaraswat258-cyber/Car_Rental_New/actions/workflows/ci.yml)
+
 Rent scooters, bikes, cars, EVs and cycles from local shops in Mount Abu and Goa. A calm, fast web app in Go: server-rendered HTML, htmx, a little vanilla JS, SQLite. Demo data only. Payments, SMS and email are simulated.
 
 ## Run it (3 commands)
@@ -38,18 +40,21 @@ Every login page has one-tap **Try as Renter / Provider / Admin** buttons. Passw
 3. Tap the compare button on two cards: the picture arcs into the tray. Tap **Compare** for the side-by-side sheet.
 4. Open a vehicle. Change the dates (the total rolls like an odometer) and tick an add-on. Tap **Book**, then **Try as Renter** in the login sheet.
 5. On checkout tap **Pay**, then **Fail** (calm decline copy), then **Success**. The Pickup Pass rises and flips. Add it to your calendar (.ics).
-6. Go to **Trips**. Open the *ready for pickup* Activa → **Start check-in** → add 4 photos (each fills its side of the silhouette) + odometer → swipe to start. Then **Return the vehicle** the same way.
-7. Open the *closed* Activa trip to see the Deposit Tracker coin journey, or the Goa Classic 350 to see an itemised extra-km deduction and leave a review.
+6. Open the pass again, turn the network off (DevTools → Network → Offline) and reload: it still opens.
+7. Go to **Trips**. Open the *ready for pickup* Activa → **Start check-in** → **Start the walk-around**: a full-screen camera with an outline per angle (too dark or blurry asks for a retake; without a camera each tile opens the photo picker). Two-wheelers need 4 angles + the odometer, cars 8 angles + odometer + fuel. Swipe to start. Then **Return the vehicle** the same way.
+8. Open the *closed* Activa trip: drag the before / after slider on each angle, and watch the Deposit Tracker coin journey. The Goa Classic 350 has an itemised extra-km deduction and a review to leave.
+9. From any vehicle, tap the shop name for its profile page (`/s/goa-wheels`): rating, reviews, live fleet.
 
 **Provider (Today → accept → calendar → inspect)**
 1. Log in with **Try as Provider**. *Today* shows requests, pickups and returns.
 2. **Accept** a Thar request; **Mark ready** a pickup.
 3. Under *Waiting for inspection*, tap **Inspect and release deposit**. Extra km and the late fee are pre-filled; add a fuel line and watch the settlement update; **Release deposit**.
-4. **Calendar**: tap a start day, then an end day on a row to block it (Undo in the toast). Try blocking over a teal booking bar: it shakes, "Already booked". Tap a grey block to remove it.
+4. **Calendar**: drag across days on a row to block them for maintenance (on a phone, tap the first day, then the last; with a keyboard, arrows + Shift, then Enter). Undo is in the toast. Try blocking over a teal booking bar: it shakes, "Already booked". Tap a hatched block to remove it.
 5. **Fleet**: toggle Live/Hidden. Open the *XPulse* draft: Publish stays disabled until it has a photo. Upload one, then Publish. **Add vehicle** walks Basics → Photos → Pricing with a live card preview.
+6. Press **Ctrl K** (Cmd K on a Mac) to jump to any booking, vehicle or page. `?` lists the shortcuts: `N` new vehicle, `B` block days, `/` search.
 
 **Admin (numbers → verify)**
-1. **Try as Admin**. KPI tiles: bookings, revenue, active trips, average deposit release time.
+1. **Try as Admin**. KPI tiles: bookings, revenue, active trips, average deposit release time. Below them, 30-day charts of bookings and revenue per day (hover or touch for the day's number; a table view sits under each).
 2. **Verify** Anjuna Bike Point. Its scooter and bike now appear in a Goa search.
 3. **Bookings** lists everything, filterable by status.
 
@@ -64,6 +69,8 @@ go test ./...
 ```bash
 go vet ./...
 ```
+
+GitHub Actions runs gofmt, `go vet` and `go test` on every push to `main` and every pull request. On Windows with Smart App Control, a test binary can be refused ("An Application Control policy has blocked this file"); `go test -trimpath -ldflags="-s -w" ./...` gets past it.
 
 Domain rules (pricing, Ask Saarthi parser, booking states, deposit settlement) have table tests; the store tests cover the double-booking guard, payment, the full trip lifecycle and image processing; the app tests render every page for every role. Browser (end-to-end) tests are milestone L8 and wait for your go-ahead.
 
@@ -80,4 +87,8 @@ web/static/           css/ (tokens.css, app.css), js/ (one module per component)
 docs/                 PROGRESS.md (milestones), DECISIONS.md (why things are the way they are)
 ```
 
-Third-party front-end files are vendored in `web/static/vendor` and `web/static/fonts`: htmx 2.0.11 (BSD-0), Motion 12.43.0 (MIT), Leaflet 1.9.4 (BSD-2), Lucide icons 1.60.0 (ISC), Inter and Fraunces (SIL OFL). Map tiles come from CARTO / OpenStreetMap at runtime (internet needed for the map only).
+Third-party front-end files are vendored in `web/static/vendor` and `web/static/fonts`: htmx 2.0.11 (0BSD), Motion 12.43.0 (MIT), Leaflet 1.9.4 (BSD-2), Lucide icons 1.60.0 (ISC), Inter and Fraunces (SIL OFL). Full licence texts: [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). Map tiles come from CARTO / OpenStreetMap at runtime (internet needed for the map only).
+
+## Hosting
+
+GitHub keeps the code; it can't run a Go server (GitHub Pages is static files only). To put Saarthi online, run `go run ./cmd/saarthi` (or a built binary) on any host that runs Go and gives it a disk for `data/`. It's a demo: data is seeded, and payments, SMS and email are simulated.
