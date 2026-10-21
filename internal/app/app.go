@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"mime"
 	"net/http"
+	"os"
 	"strings"
 	"sync"
 
@@ -153,6 +154,7 @@ func New(cfg Config) (http.Handler, error) {
 // revalidate, which is cheap because every file gets a content-hash ETag.
 func staticFiles(fsys fs.FS, dev bool) http.Handler {
 	files := http.FileServerFS(fsys)
+	hosted := os.Getenv("VERCEL") != ""
 	var mu sync.Mutex
 	etags := map[string]string{}
 	etag := func(name string) string {
@@ -179,6 +181,11 @@ func staticFiles(fsys fs.FS, dev bool) http.Handler {
 			w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
 		} else {
 			w.Header().Set("Cache-Control", "no-cache")
+		}
+		if hosted && !dev {
+			// Vercel's CDN keeps a copy per deployment, so page loads don't
+			// wake extra server instances (each has its own demo db)
+			w.Header().Set("CDN-Cache-Control", "public, max-age=31536000")
 		}
 		if tag := etag(strings.TrimPrefix(r.URL.Path, "/")); tag != "" {
 			w.Header().Set("ETag", tag) // FileServer answers If-None-Match with 304
