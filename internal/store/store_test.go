@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -155,6 +156,86 @@ func TestSessions(t *testing.T) {
 	}
 	if _, err := s.UserBySession(ctx, tok); err != ErrNotFound {
 		t.Errorf("deleted session: err = %v, want ErrNotFound", err)
+	}
+}
+
+// Two instances seeded apart build the same demo rows (D-050).
+func TestSeedIsIdenticalAcrossInstances(t *testing.T) {
+	a, b := seeded(t), newTestStore(t)
+	b.Now = func() time.Time { return seedNow.Add(7 * time.Minute) }
+	if _, err := b.SeedIfEmpty(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	rows := func(s *Store, q string) string {
+		t.Helper()
+		r, err := s.DB.Query(q)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer r.Close()
+		var out []string
+		for r.Next() {
+			var v string
+			if err := r.Scan(&v); err != nil {
+				t.Fatal(err)
+			}
+			out = append(out, v)
+		}
+		return strings.Join(out, ",")
+	}
+	for _, q := range []string{
+		`SELECT id FROM users ORDER BY id`,
+		`SELECT id FROM vehicles ORDER BY id`,
+		`SELECT code FROM bookings ORDER BY code`,
+		`SELECT id FROM trip_photos ORDER BY id`,
+	} {
+		if x, y := rows(a, q), rows(b, q); x == "" || x != y {
+			t.Errorf("%s differs between instances", q)
+		}
+	}
+	// after seeding, ids are random again
+	if NewID() == NewID() {
+		t.Error("ids repeat after seeding")
+	}
+}
+
+// A login made on one instance works on another; logging out there sticks;
+// a tampered token never does (D-050).
+func TestSessionsAcrossInstances(t *testing.T) {
+	a, b := seeded(t), seeded(t)
+	ctx := context.Background()
+	u, _, err := a.UserByEmail(ctx, DemoRenterEmail)
+	if err != nil {
+		t.Fatal(err)
+	}
+	tok, _, err := a.CreateSession(ctx, u.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got, err := b.UserBySession(ctx, tok); err != nil || got.ID != u.ID {
+		t.Fatalf("other instance: %+v, %v", got, err)
+	}
+	if _, err := b.UserBySession(ctx, tok[:len(tok)-1]+"0"); err != ErrNotFound {
+		t.Errorf("tampered token: err = %v, want ErrNotFound", err)
+	}
+	forged := strings.Replace(tok, u.ID, strings.Repeat("a", len(u.ID)), 1)
+	if _, err := b.UserBySession(ctx, forged); err != ErrNotFound {
+		t.Errorf("forged user: err = %v, want ErrNotFound", err)
+	}
+	if err := b.DeleteSession(ctx, tok); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := b.UserBySession(ctx, tok); err != ErrNotFound {
+		t.Errorf("after logout: err = %v, want ErrNotFound", err)
+	}
+	// a token this instance has never seen, logged out first, stays out
+	tok2, _, _ := a.CreateSession(ctx, u.ID)
+	c := seeded(t)
+	if err := c.DeleteSession(ctx, tok2); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := c.UserBySession(ctx, tok2); err != ErrNotFound {
+		t.Errorf("unseen token logged out: err = %v, want ErrNotFound", err)
 	}
 }
 

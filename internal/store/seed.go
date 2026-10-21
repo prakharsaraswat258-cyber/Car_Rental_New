@@ -37,6 +37,7 @@ func (s *Store) SeedIfEmpty(ctx context.Context) (bool, error) {
 	if err != nil {
 		return false, err
 	}
+	defer fixedRandom()() // same ids and codes on every server instance (D-050)
 	err = s.inTx(ctx, func(tx *sql.Tx) error {
 		sd := &seeder{
 			ctx: ctx, tx: tx, now: s.Now().UTC().Truncate(time.Second), uploads: s.UploadDir,

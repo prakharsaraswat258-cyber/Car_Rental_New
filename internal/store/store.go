@@ -5,13 +5,17 @@ package store
 import (
 	"context"
 	"crypto/rand"
+	"crypto/sha256"
 	"database/sql"
 	_ "embed"
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"io"
+	mrand "math/rand/v2"
 	"os"
 	"path/filepath"
+	"sync"
 	"time"
 
 	_ "modernc.org/sqlite" // registers the "sqlite" driver (no CGO)
@@ -116,21 +120,52 @@ func Wipe(dir string) error {
 
 // --- small helpers ---------------------------------------------------------
 
+// Random bytes for ids, tokens and booking codes. While demo data is being
+// seeded they come from a fixed stream instead, so every server instance
+// (Vercel runs several, each with its own /tmp database) builds identical
+// demo rows: the same vehicle ids, booking codes and photo ids (D-050).
+var (
+	randMu  sync.Mutex
+	randSrc io.Reader = rand.Reader
+	seeding int
+)
+
+func randomBytes(b []byte) {
+	randMu.Lock()
+	defer randMu.Unlock()
+	if _, err := io.ReadFull(randSrc, b); err != nil {
+		panic(err) // the OS random source failing is not recoverable
+	}
+}
+
+// fixedRandom switches to the seed stream until the returned func runs.
+func fixedRandom() (restore func()) {
+	randMu.Lock()
+	defer randMu.Unlock()
+	if seeding == 0 {
+		randSrc = mrand.NewChaCha8(sha256.Sum256([]byte("saarthi demo seed v1")))
+	}
+	seeding++
+	return func() {
+		randMu.Lock()
+		defer randMu.Unlock()
+		if seeding--; seeding == 0 {
+			randSrc = rand.Reader
+		}
+	}
+}
+
 // NewID returns 16 random bytes as hex (D-004).
 func NewID() string {
 	b := make([]byte, 16)
-	if _, err := rand.Read(b); err != nil {
-		panic(err) // the OS random source failing is not recoverable
-	}
+	randomBytes(b)
 	return hex.EncodeToString(b)
 }
 
 // NewToken returns 32 random bytes as hex, for session cookies.
 func NewToken() string {
 	b := make([]byte, 32)
-	if _, err := rand.Read(b); err != nil {
-		panic(err)
-	}
+	randomBytes(b)
 	return hex.EncodeToString(b)
 }
 
@@ -142,9 +177,7 @@ func NewBookingCode() string {
 	buf := make([]byte, 1)
 	limit := byte(256 - 256%len(codeAlphabet)) // reject to avoid modulo bias
 	for len(out) < 9 {
-		if _, err := rand.Read(buf); err != nil {
-			panic(err)
-		}
+		randomBytes(buf)
 		if buf[0] >= limit {
 			continue
 		}

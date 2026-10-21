@@ -105,7 +105,7 @@ func run(log *slog.Logger, addr, dataDir string, reset, dev bool) error {
 
 	errc := make(chan error, 1)
 	go func() { errc <- srv.ListenAndServe() }()
-	log.Info("Saarthi is running", "url", displayURL(addr), "dev", dev)
+	log.Info("Saarthi is running", "url", displayURL(addr), "dev", dev, "shared_sessions", store.SharedSessions())
 
 	select {
 	case err := <-errc:
