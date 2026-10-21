@@ -143,7 +143,7 @@ func rules(v store.Vehicle) []Rule {
 	if v.Type != "cycle" {
 		out = append(out, Rule{Icon: "key-round", Text: "Bring your driving licence and one photo ID. The shop does the licence check at pickup."})
 	}
-	out = append(out, Rule{Icon: "camera", Text: "Take four quick photos at pickup and return.", Tip: "Photos are timestamped so nobody can blame you later"})
+	out = append(out, Rule{Icon: "camera", Text: "Take " + domain.ProofPhrase(v.Class()) + " at pickup and return.", Tip: "Photos are timestamped so nobody can blame you later"})
 	return out
 }
 

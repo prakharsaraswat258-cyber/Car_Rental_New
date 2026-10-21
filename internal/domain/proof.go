@@ -84,6 +84,18 @@ func ShotLabel(shot string, electric bool) string {
 	return shot
 }
 
+// ProofPhrase says what the walk-around asks for, for copy like "Take
+// eight quick photos, then the odometer and fuel, at pickup and return."
+func ProofPhrase(class string) string {
+	switch class {
+	case ClassFourWheeler:
+		return "eight quick photos, then the odometer and fuel"
+	case ClassCycle:
+		return "four quick photos"
+	}
+	return "four quick photos and the odometer"
+}
+
 // IsAngle reports whether a shot is of the body (not a gauge).
 func IsAngle(shot string) bool { return shot != ShotOdometer && shot != ShotFuel }
 

@@ -413,7 +413,7 @@ func nextStep(b store.Booking, now time.Time) NextStep {
 				Text: "Swipe to start the trip once you have the keys.", Label: "Start the trip", URL: "/trips/" + b.Code + "/checkin"}
 		}
 		return NextStep{Title: "Your ride is ready", Tone: "road",
-			Text:  "Take four quick photos before you leave, so old scratches are on record.",
+			Text:  "Take " + domain.ProofPhrase(b.Class()) + " before you leave, so old scratches are on record.",
 			Label: "Start check-in", URL: "/trips/" + b.Code + "/checkin"}
 	case domain.StatusActive:
 		left := b.End.Sub(now)

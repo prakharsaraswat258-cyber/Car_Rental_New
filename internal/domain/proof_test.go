@@ -60,6 +60,19 @@ func TestShotLabel(t *testing.T) {
 	}
 }
 
+func TestProofPhrase(t *testing.T) {
+	tests := []struct{ class, want string }{
+		{ClassFourWheeler, "eight quick photos, then the odometer and fuel"},
+		{ClassTwoWheeler, "four quick photos and the odometer"},
+		{ClassCycle, "four quick photos"},
+	}
+	for _, tt := range tests {
+		if got := ProofPhrase(tt.class); got != tt.want {
+			t.Errorf("ProofPhrase(%s) = %q, want %q", tt.class, got, tt.want)
+		}
+	}
+}
+
 func TestHaversineKm(t *testing.T) {
 	tests := []struct {
 		name                   string

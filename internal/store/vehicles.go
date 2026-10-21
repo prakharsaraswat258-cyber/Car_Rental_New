@@ -59,6 +59,10 @@ func (v Vehicle) Rates() domain.Rates {
 // Class is two_wheeler, four_wheeler or cycle.
 func (v Vehicle) Class() string { return domain.ClassOf(v.Type, v.Seats) }
 
+// ProofPhrase is the check-in ask for this vehicle ("four quick photos and
+// the odometer").
+func (v Vehicle) ProofPhrase() string { return domain.ProofPhrase(v.Class()) }
+
 // Art names the line-art silhouette used when there is no photo.
 func (v Vehicle) Art() string { return ArtFor(v.Type, v.Seats) }
 
