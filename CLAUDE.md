@@ -1,6 +1,6 @@
 # CLAUDE.md — Saarthi (Vehicle Rental Platform, LITE build)
 
-Read this fully at the start of every session. Full spec: `BUILD_PROMPT.md`. Progress: `docs/PROGRESS.md`.
+Read this fully at the start of every session. Full spec: `BUILD_PROMPT.md`. Frontend addendum (wins on frontend): `UI_UX_UPGRADE.md`. Progress: `docs/PROGRESS.md`.
 
 ## Goal
 A **fabulous-looking, smooth, responsive web app** for renting cars, bikes, scooters, EVs and cycles, with the

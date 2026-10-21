@@ -20,6 +20,35 @@ type VehicleData struct {
 	Next      string // where login sends you back to
 	Rules     []Rule
 	Included  []string
+	Gallery   []GalleryItem
+}
+
+// GalleryItem is a photo, or a line-art view when the shop hasn't
+// uploaded photos yet.
+type GalleryItem struct {
+	Photo, Art, Label string
+	Mirror, Turn      bool
+}
+
+func gallery(v store.Vehicle) []GalleryItem {
+	var out []GalleryItem
+	for i, p := range v.Photos {
+		if i == 5 {
+			break
+		}
+		out = append(out, GalleryItem{Photo: p.URL(), Label: v.Name() + " photo " + domain.Grouped(int64(i+1))})
+	}
+	if len(out) > 0 {
+		return out
+	}
+	a := v.Art()
+	return []GalleryItem{
+		{Art: a, Label: "Side view"},
+		{Art: frontArt(a), Label: "Front"},
+		{Art: a, Label: "Other side", Mirror: true},
+		{Art: a, Label: "Three-quarter view", Turn: true},
+		{Art: frontArt(a), Label: "Rear"},
+	}
 }
 
 // Rule is one plain-words rental rule.
@@ -88,6 +117,7 @@ func (h *Handlers) Vehicle(w http.ResponseWriter, r *http.Request) {
 		Cal:       calendarMonth(v.ID, month, now, busy[v.ID]),
 		Map:       toJSON([]Pin{{ID: v.ID, Lat: v.ShopLat, Lng: v.ShopLng, Label: v.ShopName}}),
 		InCompare: p.InCompare(v.ID),
+		Gallery:   gallery(v),
 		Next:      r.URL.RequestURI(),
 		Rules:     rules(v),
 		Included:  included(v),

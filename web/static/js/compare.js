@@ -39,15 +39,27 @@ async function submit(form) {
   const id = form.action.match(/\/compare\/([0-9a-f]{32})/)?.[1];
   const removing = form.matches("[data-compare-remove]") || btn?.getAttribute("aria-pressed") === "true";
   const url = removing ? `/compare/${id}` : form.action;
-  const res = await request(url, { method: removing ? "DELETE" : "POST" });
+  // optimistic: the button flips now and flips back if the server says no
+  const was = btn?.getAttribute("aria-pressed");
+  if (btn && was !== null) btn.setAttribute("aria-pressed", String(!removing));
+  const revert = () => { if (btn && was !== null) btn.setAttribute("aria-pressed", was); };
+  let res;
+  try {
+    res = await request(url, { method: removing ? "DELETE" : "POST" });
+  } catch {
+    revert();
+    toast({ message: "Couldn't update compare. Try again.", tone: "bad" });
+    return;
+  }
   const html = await res.text();
   if (res.status === 409) {
+    revert();
     const root = document.getElementById("sheet-root");
     root.innerHTML = html;
     document.dispatchEvent(new CustomEvent("saarthi:init", { detail: root }));
     return;
   }
-  if (!res.ok) { toast({ message: "Couldn't update compare. Try again.", tone: "bad" }); return; }
+  if (!res.ok) { revert(); toast({ message: "Couldn't update compare. Try again.", tone: "bad" }); return; }
   const ids = JSON.parse(res.headers.get("X-Compare-IDs") || "[]");
   const old = document.getElementById("compare-tray");
   if (old) swapHTML(old, html);
@@ -77,7 +89,7 @@ export function initCompare(root) {
     if (!once(form, "cmpReady")) continue;
     form.addEventListener("submit", (e) => {
       e.preventDefault();
-      submit(form).catch(() => form.submit());
+      submit(form).catch((err) => console.error("[saarthi] compare", err));
     });
   }
   const tray = document.getElementById("compare-tray");

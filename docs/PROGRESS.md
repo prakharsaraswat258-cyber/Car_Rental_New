@@ -1,8 +1,8 @@
 # PROGRESS — Saarthi LITE
 
-Spec: `BUILD_PROMPT.md` · Rules: `CLAUDE.md` · Decisions: `docs/DECISIONS.md`
+Spec: `BUILD_PROMPT.md` · Frontend addendum (wins on frontend): `UI_UX_UPGRADE.md` · Rules: `CLAUDE.md` · Decisions: `docs/DECISIONS.md`
 
-Every milestone ends with: `go test ./...` green · `go vet ./...` green · this file ticked · `git commit` · "how to see it" steps.
+Every milestone ends with: `go test ./...` green · `go vet ./...` green · Design QA checklist (UI_UX_UPGRADE §5) · performance budget (§4) · this file ticked · `git commit` · "how to see it" click-path + ask for screenshots (phone + desktop, light + dark).
 
 Legend: `[x]` done · `[ ]` todo · `[~]` partly done / pulled forward
 
@@ -66,7 +66,7 @@ Legend: `[x]` done · `[ ]` todo · `[~]` partly done / pulled forward
 - [x] Commit (with L1)
 
 ## L5 — Trip
-- [x] Check-in / return pages: 4 angles + odometer, `capture="environment"`, angle fill, missing-photo copy
+- [x] Check-in / return pages: 4 angles + odometer, `capture="environment"`, angle fill, missing-photo copy (upgraded: shots per vehicle class, see U below)
 - [x] Upload validation (8 MB, magic bytes), re-encode JPEG (strip EXIF), `GET /photos/{id}` access check
 - [x] SwipeConfirm start / end (+ hold Enter 1 s)
 - [x] Deposit Tracker + coin journey, deductions itemised, lazy `credited` after 1 min
@@ -92,6 +92,60 @@ Legend: `[x]` done · `[ ]` todo · `[~]` partly done / pulled forward
 - [x] README demo walkthrough per role
 - [x] Commit (with L1)
 
+## U — UI/UX upgrade (`UI_UX_UPGRADE.md`, applied across L1–L7)
+Restored features (§1), by milestone:
+- [x] L1 · Status chips = colour + icon + word (`statusIcon`), everywhere a status shows
+- [x] L1 · "?" help popovers (`tip` partial, `help.js`): tap/Enter toggles, Esc / outside tap closes, focus returns
+- [x] L1 · Illustration set at 1.5 px `--ink-2`: 6 side views, 6 front views, gauge, road-end (404), broken (500), offline, calendar, compare, quiet, checklist
+- [x] L1 · Designed 404 / 500 / offline pages (`notfound`, `error`, `offline`); recover middleware renders the 500 page
+- [x] L2 · Claude-like centred home, category strip with live counts, sticky header border only after scroll
+- [x] L2 · "4★ & up" filter and "Nearest" sort (haversine from the area / city centre, distance on cards)
+- [x] L2 · Skeleton only after 300 ms, shown ≥ 400 ms; optimistic chip removal; results scroll restored on Back
+- [x] L3 · Gallery: 1 + 4 grid on desktop, swipe carousel + dots on phones, lightbox (arrows, swipe, pull down to close); line-art views when a vehicle has no photos
+- [x] L3 · Shop profile `/s/{slug}`: rating, reviews, live fleet (verified shops only, unless owner / admin)
+- [x] L3 · Compare toggle is optimistic, reverts on error
+- [x] L4 · Wallet-style Pickup Pass with a QR-like pattern (decorative, the code is the source of truth)
+- [x] L4 · "How pickup works" card, dismissal remembered in a cookie
+- [x] L4 · Offline Pickup Pass: service worker (`/sw.js`), manifest, 192 / 512 icons; logging out clears saved passes
+- [x] L4 · `.ics` with GEO, URL, STATUS, TRANSP
+- [x] L4 · Date picker keyboard: arrows, PageUp / PageDown, Home / End, Enter; roving tabindex
+- [x] L4 · Inline validation on blur + focused error summary (signup, vehicle editor); double-submit guard
+- [x] L5 · Full-screen check-in camera (`getUserMedia`, rear camera) with a silhouette per angle; file picker fallback
+- [x] L5 · Shots per class: cars 8 angles + odometer + fuel/charge; bikes & scooters 4 angles + odometer; cycles 4 angles (`domain.ProofShots`, tested)
+- [x] L5 · Too dark (mean < 60) / blurry (Laplacian variance < 35) check, Retake or Use anyway — camera and picker both
+- [x] L5 · Angle-matched before / after compare with a wipe slider (trip detail, provider booking, inspection, admin booking)
+- [x] L6 · Calendar: drag across days (ghost bar snaps to days), hatched maintenance blocks, touch tap-tap, keyboard (arrows, Shift + arrows, Enter, Esc), Undo
+- [x] L6 · Ctrl / Cmd K command palette (bookings, vehicles, pages; shops for admin) + shortcuts N, B, /, ?
+- [x] L7 · Admin 30-day inline-SVG charts (bookings per day, revenue per day; one series each, one axis) with crosshair tooltip + table view; admin booking detail
+- [x] L7 · Gzip middleware, lazy Leaflet (map pages only) and lazy Motion (springs only); dark-mode image dimming; tap targets ≥ 44 px; sized lazy images fade in
+- [x] Demo history: 30 days of closed trips + reviews so charts and shop pages have data; `SchemaVersion = 2` asks for `-reset` on an old DB
+
+Performance budget (§4), measured 2026-10-21:
+- [x] Own JS 41.4 KB gzip (≤ 60) as deferred ES modules · CSS 19.4 KB gzip (≤ 50)
+- [x] Leaflet (41.7 KB gz) loads only when a `[data-map]` exists; Motion (45.3 KB gz) only on the first spring; htmx 16.5 KB gz everywhere
+- [x] Two main fonts preloaded, `font-display: swap`; gzip + weak ETags in Go; hashed static URLs cache forever
+- [ ] LCP < 1.5 s, CLS < 0.05, long tasks: needs a browser (yours, DevTools → Lighthouse) until L8
+
+Design QA checklist (§5), per screen. "Code" = checked by reading the markup/CSS and by `go test` rendering every page; "Eyes" = needs your screenshots (phone + desktop, light + dark).
+
+| Screen | 1 one accent action | 3 states | 4 copy | 6 keyboard / labels | 7 motion + reduced | 8 no shift | 2, 5, 9, 10 visual |
+|---|---|---|---|---|---|---|---|
+| Home `/` | code ✓ | code ✓ | code ✓ | code ✓ | code ✓ | code ✓ | Eyes |
+| Results `/search` | code ✓ | code ✓ | code ✓ | code ✓ | code ✓ | code ✓ | Eyes |
+| Vehicle `/v/{id}` + lightbox | code ✓ | code ✓ | code ✓ | code ✓ | code ✓ | code ✓ | Eyes |
+| Shop `/s/{slug}` | code ✓ | code ✓ | code ✓ | code ✓ | code ✓ | code ✓ | Eyes |
+| Checkout + Pay sheet | code ✓ | code ✓ | code ✓ | code ✓ | code ✓ | code ✓ | Eyes |
+| Pickup Pass | code ✓ | code ✓ | code ✓ | code ✓ | code ✓ | code ✓ | Eyes |
+| My trips / trip detail | code ✓ | code ✓ | code ✓ | code ✓ | code ✓ | code ✓ | Eyes |
+| Check-in camera / return | code ✓ | code ✓ | code ✓ | code ✓ | code ✓ | code ✓ | Eyes |
+| Provider today / fleet / editor | code ✓ | code ✓ | code ✓ | code ✓ | code ✓ | code ✓ | Eyes |
+| Provider calendar | code ✓ | code ✓ | code ✓ | code ✓ | code ✓ | code ✓ | Eyes |
+| Inspection | code ✓ | code ✓ | code ✓ | code ✓ | code ✓ | code ✓ | Eyes |
+| Admin overview + charts | code ✓ | code ✓ | code ✓ | code ✓ | code ✓ | code ✓ | Eyes |
+| 404 / 500 / offline | code ✓ | n/a | code ✓ | code ✓ | code ✓ | code ✓ | Eyes |
+
+- [ ] Review loop (§6): your screenshots → my critique against §5 → fixes. Waiting on you.
+
 ## L8 — End-to-end tests (ONLY after L0–L7 done AND user says go)
 - [ ] Ask user first (browser download ~300–500 MB)
 - [ ] playwright-go: Ask → book → pay → Pickup Pass; pay fail; provider accept; check-in → return → inspection → credited; block hides dates; admin verifies shop
@@ -103,3 +157,4 @@ Legend: `[x]` done · `[ ]` todo · `[~]` partly done / pulled forward
 - 2026-10-20 — LITE spec adopted. Docs rewritten. L0 code written; waiting on Go install to build and test.
 - 2026-10-20 — Go 1.27.0 installed on D:. L0 built, vetted and tested first try (gofmt only). L0 committed. Next: L1 design system.
 - 2026-10-20 — User asked for everything in one go. L1–L7 built together and committed as one change: design system + styleguide, Ask Saarthi parser (33 cases), search/map/compare, vehicle detail + live quote, auth + checkout + demo pay, trips + pass + check-in/return + deposit tracker + reviews, provider console (today, fleet editor, calendar blocks, inspection), admin. `go test ./...` renders every page for every role. Browser checks left to the user per CLAUDE.md. L8 waits for the user's go-ahead.
+- 2026-10-21 — `UI_UX_UPGRADE.md` adopted (overrides BUILD_PROMPT on frontend). Built all restored features + polish / a11y / performance pass in one go (section U). Schema v2 → start once with `-reset`. Design QA self-checked in code; visual review waits on the user's screenshots.

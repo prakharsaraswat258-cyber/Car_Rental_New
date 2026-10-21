@@ -12,8 +12,7 @@
   <div class="stack-6">
     <section class="card">{{template "status-line" $b}}</section>
     <div>{{template "req-card" $b}}</div>
-    {{if $d.Checkin}}<section><h2 class="section-title">Pickup photos</h2>{{template "photo-grid" $d.Checkin}}</section>{{end}}
-    {{if $d.Return}}<section><h2 class="section-title">Return photos</h2>{{template "photo-grid" $d.Return}}</section>{{end}}
+    {{if $d.Pairs}}<section><h2 class="section-title">{{if $d.Return}}Pickup vs return, angle by angle{{else}}Pickup photos{{end}}</h2>{{template "photo-compare" $d.Pairs}}</section>{{end}}
     <section class="card"><h2 class="h3" style="margin-bottom:12px">Timeline</h2><ol class="timeline plain" role="list">{{range $d.Events}}<li><div>{{.Note}}<time>{{date .At}}, {{clock .At}}</time></div></li>{{end}}</ol></section>
   </div>
   <aside class="stack">

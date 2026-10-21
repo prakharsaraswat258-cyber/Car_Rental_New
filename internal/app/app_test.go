@@ -158,6 +158,68 @@ func TestPublicPages(t *testing.T) {
 	}
 }
 
+func TestUpgradePages(t *testing.T) {
+	e := newEnv(t)
+	nakki := e.id(`SELECT id FROM areas WHERE name = 'Nakki Lake'`)
+	ok(t, "shop", e.get("/s/abu-riders", nil), "Abu Riders", "Rides from Abu Riders", "What renters said", "WhatsApp")
+	if w := e.get("/s/anjuna-bike-point", nil); w.Code != 404 {
+		t.Errorf("pending shop profile = %d, want 404", w.Code)
+	}
+	ok(t, "nearest", e.get("/search?city=mount-abu&area="+nakki+"&sort=nearest&rating=4", nil), "Nearest first", "4★ &amp; up", "from Nakki Lake")
+	ok(t, "offline", e.get("/offline", nil), "No signal right now")
+	sw := e.get("/sw.js", nil)
+	if sw.Code != 200 || !strings.HasPrefix(sw.Header().Get("Content-Type"), "text/javascript") || strings.Contains(sw.Body.String(), "__SHELL__") ||
+		!strings.Contains(sw.Body.String(), "/static/css/app.css") {
+		t.Errorf("sw.js = %d %q", sw.Code, sw.Header().Get("Content-Type"))
+	}
+	m := e.get("/manifest.webmanifest", nil)
+	if m.Code != 200 || !strings.Contains(m.Body.String(), `"display":"standalone"`) || !strings.Contains(m.Body.String(), "icon-512.png") {
+		t.Errorf("manifest = %d %s", m.Code, m.Body)
+	}
+
+	// gzip for text, never for already-compressed fonts
+	r := httptest.NewRequest("GET", "/static/css/app.css", nil)
+	r.Header.Set("Accept-Encoding", "gzip, br")
+	if w := e.do(r); w.Header().Get("Content-Encoding") != "gzip" || w.Body.Len() == 0 {
+		t.Errorf("css not gzipped: %q", w.Header().Get("Content-Encoding"))
+	}
+	r = httptest.NewRequest("GET", "/static/fonts/inter-latin.woff2", nil)
+	r.Header.Set("Accept-Encoding", "gzip")
+	if w := e.do(r); w.Header().Get("Content-Encoding") != "" {
+		t.Errorf("woff2 should not be gzipped")
+	}
+
+	prov := e.login(store.RoleProvider)
+	ok(t, "palette pages", e.get("/p/palette?q=", prov, "HX-Request", "true"), "Today", "Fleet", "Calendar")
+	ok(t, "palette reg", e.get("/p/palette?q=rj38sa", prov, "HX-Request", "true"), "Activa", "RJ 38 SA")
+	var code string
+	e.st.DB.QueryRow(`SELECT b.code FROM bookings b JOIN shops s ON s.id = b.shop_id WHERE s.slug = 'abu-riders' LIMIT 1`).Scan(&code)
+	ok(t, "palette code", e.get("/p/palette?q="+code, prov, "HX-Request", "true"), code)
+	if w := e.get("/p/palette?q=GA%2007", prov, "HX-Request", "true"); strings.Contains(w.Body.String(), "Goa Wheels") || strings.Contains(w.Body.String(), "GA 07 K") {
+		t.Errorf("provider palette leaked another shop's vehicles")
+	}
+
+	adm := e.login(store.RoleAdmin)
+	ok(t, "admin charts", e.get("/admin", adm), "Bookings per day", "Revenue per day", "chart-line", "Show as a table")
+	ok(t, "admin palette", e.get("/admin/palette?q=goa", adm, "HX-Request", "true"), "Goa Wheels")
+	active := e.id(`SELECT b.id FROM bookings b JOIN users u ON u.id = b.renter_id WHERE u.email = ? AND b.status = 'returned'`, store.DemoRenterEmail)
+	ok(t, "admin booking", e.get("/admin/bookings/"+active, adm), "Proof photos, angle by angle", "pc-wipe", "Return photo, front")
+
+	renter := e.login(store.RoleRenter)
+	var closed string
+	e.st.DB.QueryRow(`SELECT b.code FROM bookings b JOIN users u ON u.id = b.renter_id WHERE u.email = ? AND b.status = 'closed' LIMIT 1`, store.DemoRenterEmail).Scan(&closed)
+	ok(t, "trip compare", e.get("/trips/"+closed, renter), "angle by angle", "data-wipe")
+	var confirmed string
+	e.st.DB.QueryRow(`SELECT b.code FROM bookings b JOIN users u ON u.id = b.renter_id WHERE u.email = ? AND b.status = 'confirmed' LIMIT 1`, store.DemoRenterEmail).Scan(&confirmed)
+	ok(t, "pass tips", e.get("/trips/"+confirmed+"/pass", renter), "How pickup works", `class="qr"`)
+	r = httptest.NewRequest("GET", "/trips/"+confirmed+"/pass", nil)
+	r.AddCookie(renter)
+	r.AddCookie(&http.Cookie{Name: handlers.TipsCookie, Value: "hidden"})
+	if strings.Contains(e.do(r).Body.String(), "How pickup works") {
+		t.Errorf("tips card should stay dismissed")
+	}
+}
+
 func TestConflictSuggestsNextFreeDay(t *testing.T) {
 	e := newEnv(t)
 	// the Thar is booked day+3 08:00 → day+5 20:00 by the demo renter

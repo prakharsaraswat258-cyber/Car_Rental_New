@@ -100,7 +100,8 @@ func TestSeedFillsEveryScreen(t *testing.T) {
 		(SELECT COUNT(*) FROM reviews), (SELECT COUNT(*) FROM deductions),
 		(SELECT COUNT(*) FROM deposits WHERE status = 'credited'),
 		(SELECT COUNT(*) FROM deposits WHERE status = 'inspection')`).Scan(&reviews, &deductions, &credited, &inspection)
-	if reviews != 1 || deductions != 1 || credited != 2 || inspection != 1 {
+	// the month of history adds more reviews, deductions and credited deposits
+	if reviews < 10 || deductions < 1 || credited < 20 || inspection != 1 {
 		t.Errorf("reviews=%d deductions=%d credited=%d inspection=%d", reviews, deductions, credited, inspection)
 	}
 

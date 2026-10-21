@@ -172,7 +172,7 @@ func (h *Handlers) ProviderBooking(w http.ResponseWriter, r *http.Request) {
 	events, _ := h.Store.BookingEvents(r.Context(), b.ID)
 	photos, _ := h.Store.TripPhotos(r.Context(), b.ID)
 	dep, _ := h.depositView(r.Context(), b)
-	d := TripData{B: b, Events: events, Deposit: dep, Steps: domain.TripSteps}
+	d := TripData{B: b, Events: events, Deposit: dep, Steps: domain.TripSteps, Pairs: photoPairs(photos, b.Electric())}
 	for _, p := range photos {
 		if p.Phase == "checkin" {
 			d.Checkin = append(d.Checkin, p)
@@ -722,19 +722,15 @@ type InspectData struct {
 
 // PhotoPair puts a check-in photo next to the return photo of the same angle.
 type PhotoPair struct {
-	Angle         string
+	Angle, Label  string
 	Before, After *store.TripPhoto
 }
 
-func (h *Handlers) inspectData(r *http.Request, b store.Booking, fromForm bool) (InspectData, error) {
-	d := InspectData{B: b, OdoEnd: b.OdoEnd, Errors: map[string]string{},
-		Kinds: []domain.DeductionKind{domain.DeductFuel, domain.DeductDamage, domain.DeductCleaning}}
-	photos, err := h.Store.TripPhotos(r.Context(), b.ID)
-	if err != nil {
-		return d, err
-	}
-	for _, a := range store.TripAngles {
-		pp := PhotoPair{Angle: a}
+// photoPairs matches check-in and return photos by angle, in walk-around order.
+func photoPairs(photos []store.TripPhoto, electric bool) []PhotoPair {
+	var out []PhotoPair
+	for _, a := range domain.AllShots {
+		pp := PhotoPair{Angle: a, Label: domain.ShotLabel(a, electric)}
 		for i := range photos {
 			if photos[i].Angle == a {
 				if photos[i].Phase == "checkin" {
@@ -745,9 +741,20 @@ func (h *Handlers) inspectData(r *http.Request, b store.Booking, fromForm bool) 
 			}
 		}
 		if pp.Before != nil || pp.After != nil {
-			d.Pairs = append(d.Pairs, pp)
+			out = append(out, pp)
 		}
 	}
+	return out
+}
+
+func (h *Handlers) inspectData(r *http.Request, b store.Booking, fromForm bool) (InspectData, error) {
+	d := InspectData{B: b, OdoEnd: b.OdoEnd, Errors: map[string]string{},
+		Kinds: []domain.DeductionKind{domain.DeductFuel, domain.DeductDamage, domain.DeductCleaning}}
+	photos, err := h.Store.TripPhotos(r.Context(), b.ID)
+	if err != nil {
+		return d, err
+	}
+	d.Pairs = photoPairs(photos, b.Electric())
 	if fromForm {
 		if n := formInt(r, "odo_end"); n > 0 {
 			d.OdoEnd = n

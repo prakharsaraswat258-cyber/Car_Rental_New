@@ -124,6 +124,8 @@ type SearchData struct {
 	Max         string
 	Sort        string
 	Form        SearchForm
+	MinRating   bool
+	HasOrigin   bool
 	AllTypes    []string
 	AllFuels    []string
 	AllTrans    []string
@@ -170,9 +172,22 @@ func (h *Handlers) Search(w http.ResponseWriter, r *http.Request) {
 		start, end = time.Time{}, time.Time{}
 	}
 	maxRupees, _ := strconv.ParseInt(q.Get("max"), 10, 64)
+	minRating := q.Get("rating") == "4"
 	sortBy := q.Get("sort")
-	if sortBy != "rating" {
+	if sortBy != "rating" && sortBy != "nearest" {
 		sortBy = "price"
+	}
+	// "Nearest" measures from the area centre, else the city centre
+	var origin *[2]float64
+	originName := ""
+	if f.AreaID != "" {
+		if a, _, err := h.Store.AreaByID(ctx, f.AreaID); err == nil {
+			origin, originName = &[2]float64{a.Lat, a.Lng}, a.Name
+		}
+	} else if f.CitySlug != "" {
+		if c, err := h.Store.CityBySlug(ctx, f.CitySlug); err == nil {
+			origin, originName = &[2]float64{c.Lat, c.Lng}, c.Name+" centre"
+		}
 	}
 
 	p := h.page(w, r, "Results · Saarthi", "explore", nil)
@@ -212,7 +227,25 @@ func (h *Handlers) Search(w http.ResponseWriter, r *http.Request) {
 			}
 			cards = kept
 		}
+		if minRating {
+			kept := cards[:0]
+			for _, c := range cards {
+				if c.V.RatingCount > 0 && c.V.RatingAvg >= 4 {
+					kept = append(kept, c)
+				}
+			}
+			cards = kept
+		}
+		if origin != nil {
+			for i := range cards {
+				cards[i].Distance = domain.HaversineKm(origin[0], origin[1], cards[i].V.ShopLat, cards[i].V.ShopLng)
+				cards[i].DistanceFrom = originName
+			}
+		}
 		sort.SliceStable(cards, func(i, j int) bool {
+			if sortBy == "nearest" && origin != nil && cards[i].Distance != cards[j].Distance {
+				return cards[i].Distance < cards[j].Distance
+			}
 			if sortBy == "rating" {
 				if cards[i].V.RatingAvg != cards[j].V.RatingAvg {
 					return cards[i].V.RatingAvg > cards[j].V.RatingAvg
@@ -230,7 +263,8 @@ func (h *Handlers) Search(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	data := SearchData{Q: q.Get("q"), Query: q.Encode(), HasDates: hasDates, Types: f.Types, Fuels: f.Fuels, Trans: f.Trans,
-		Sort: sortBy, AllTypes: domain.VehicleTypes, AllFuels: []string{"petrol", "diesel", "electric"}, AllTrans: []string{"automatic", "manual"}}
+		Sort: sortBy, AllTypes: domain.VehicleTypes, AllFuels: []string{"petrol", "diesel", "electric"}, AllTrans: []string{"automatic", "manual"},
+		MinRating: minRating, HasOrigin: origin != nil}
 	if maxRupees > 0 {
 		data.Max = strconv.FormatInt(maxRupees, 10)
 	}
@@ -341,6 +375,12 @@ func (h *Handlers) searchChips(r *http.Request, q url.Values, f store.SearchFilt
 	}
 	if sortBy == "price" && q.Get("sort") == "price" {
 		chips = append(chips, ChipView{Kind: "sort", Icon: "arrow-up-down", Label: "Lowest price first", RemoveURL: without("sort")})
+	}
+	if sortBy == "nearest" {
+		chips = append(chips, ChipView{Kind: "sort", Icon: "navigation", Label: "Nearest first", RemoveURL: without("sort")})
+	}
+	if q.Get("rating") == "4" {
+		chips = append(chips, ChipView{Kind: "rating", Icon: "star", Label: "4★ & up", RemoveURL: without("rating")})
 	}
 	return chips
 }

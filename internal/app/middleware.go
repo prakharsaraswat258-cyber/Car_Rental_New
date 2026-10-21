@@ -1,12 +1,15 @@
 package app
 
 import (
+	"compress/gzip"
 	"errors"
+	"io"
 	"log/slog"
 	"net/http"
 	"net/url"
 	"runtime/debug"
 	"strings"
+	"sync"
 	"time"
 
 	"saarthi/internal/handlers"
@@ -16,8 +19,9 @@ import (
 // SessionCookie holds the login token (D-007).
 const SessionCookie = handlers.SessionCookie
 
-// recoverPanics turns a panic into a 500 and a log line with the stack.
-func recoverPanics(log *slog.Logger, next http.Handler) http.Handler {
+// recoverPanics turns a panic into the designed 500 page and a log line
+// with the stack.
+func recoverPanics(log *slog.Logger, page http.HandlerFunc, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			if v := recover(); v != nil {
@@ -25,10 +29,104 @@ func recoverPanics(log *slog.Logger, next http.Handler) http.Handler {
 					panic(v)
 				}
 				log.Error("panic", "path", r.URL.Path, "err", v, "stack", string(debug.Stack()))
-				http.Error(w, "Something went wrong on our side. Please try again.", http.StatusInternalServerError)
+				func() {
+					defer func() {
+						if recover() != nil {
+							http.Error(w, "Something broke on our side. Your bookings are safe.", http.StatusInternalServerError)
+						}
+					}()
+					page(w, r)
+				}()
 			}
 		}()
 		next.ServeHTTP(w, r)
+	})
+}
+
+// --- gzip --------------------------------------------------------------------
+
+var gzipPool = sync.Pool{New: func() any { w, _ := gzip.NewWriterLevel(io.Discard, gzip.DefaultCompression); return w }}
+
+var compressible = []string{"text/", "application/json", "application/javascript", "application/manifest+json", "image/svg+xml"}
+
+type gzipWriter struct {
+	http.ResponseWriter
+	gz      *gzip.Writer
+	decided bool
+	on      bool
+}
+
+func (g *gzipWriter) decide() {
+	if g.decided {
+		return
+	}
+	g.decided = true
+	h := g.Header()
+	if h.Get("Content-Encoding") != "" {
+		return
+	}
+	ct := h.Get("Content-Type")
+	for _, p := range compressible {
+		if strings.HasPrefix(ct, p) {
+			g.on = true
+			break
+		}
+	}
+	if !g.on {
+		return
+	}
+	h.Del("Content-Length")
+	h.Set("Content-Encoding", "gzip")
+	h.Add("Vary", "Accept-Encoding")
+	if tag := h.Get("ETag"); tag != "" && !strings.HasPrefix(tag, "W/") {
+		h.Set("ETag", "W/"+tag) // the bytes differ from the uncompressed file
+	}
+	g.gz = gzipPool.Get().(*gzip.Writer)
+	g.gz.Reset(g.ResponseWriter)
+}
+
+func (g *gzipWriter) WriteHeader(code int) {
+	if code < 200 || code == http.StatusNoContent || code == http.StatusNotModified {
+		g.decided = true
+	} else {
+		g.decide()
+	}
+	g.ResponseWriter.WriteHeader(code)
+}
+
+func (g *gzipWriter) Write(b []byte) (int, error) {
+	if !g.decided {
+		if g.Header().Get("Content-Type") == "" {
+			g.Header().Set("Content-Type", http.DetectContentType(b))
+		}
+		g.decide()
+	}
+	if g.on {
+		return g.gz.Write(b)
+	}
+	return g.ResponseWriter.Write(b)
+}
+
+func (g *gzipWriter) Unwrap() http.ResponseWriter { return g.ResponseWriter }
+
+func (g *gzipWriter) close() {
+	if g.on && g.gz != nil {
+		g.gz.Close()
+		gzipPool.Put(g.gz)
+	}
+}
+
+// gzipResponses compresses text responses (HTML, CSS, JS, JSON, SVG) when
+// the browser accepts gzip. Range requests are left alone.
+func gzipResponses(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if !strings.Contains(r.Header.Get("Accept-Encoding"), "gzip") || r.Header.Get("Range") != "" || r.Method == http.MethodHead {
+			next.ServeHTTP(w, r)
+			return
+		}
+		g := &gzipWriter{ResponseWriter: w}
+		defer g.close()
+		next.ServeHTTP(g, r)
 	})
 }
 

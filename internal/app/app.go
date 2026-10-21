@@ -83,6 +83,10 @@ func New(cfg Config) (http.Handler, error) {
 	mux.HandleFunc("GET /vphotos/{id}", h.VehiclePhoto)
 	mux.HandleFunc("GET /photos/{id}", h.TripPhoto) // owner / shop / admin checked inside
 	mux.HandleFunc("GET /account", anyone(h.Account))
+	mux.HandleFunc("GET /s/{slug}", h.ShopPage)
+	mux.HandleFunc("GET /offline", h.Offline)
+	mux.HandleFunc("GET /sw.js", h.ServiceWorker)
+	mux.HandleFunc("GET /manifest.webmanifest", h.Manifest)
 
 	// Renter
 	mux.HandleFunc("GET /checkout/{vehicleID}", renter(h.Checkout))
@@ -120,12 +124,15 @@ func New(cfg Config) (http.Handler, error) {
 	mux.HandleFunc("GET /p/calendar", provider(h.ProviderCalendar))
 	mux.HandleFunc("POST /p/blocks", provider(h.CreateBlock))
 	mux.HandleFunc("DELETE /p/blocks/{id}", provider(h.DeleteBlock))
+	mux.HandleFunc("GET /p/palette", provider(h.Palette(false)))
 
 	// Admin
 	mux.HandleFunc("GET /admin", admin(h.Admin))
 	mux.HandleFunc("POST /admin/shops/{id}/verify", admin(h.AdminShopStatus("verified")))
 	mux.HandleFunc("POST /admin/shops/{id}/suspend", admin(h.AdminShopStatus("suspended")))
 	mux.HandleFunc("GET /admin/bookings", admin(h.AdminBookings))
+	mux.HandleFunc("GET /admin/bookings/{id}", admin(h.AdminBooking))
+	mux.HandleFunc("GET /admin/palette", admin(h.Palette(true)))
 
 	// Everything else
 	mux.HandleFunc("/", h.NotFound)
@@ -135,8 +142,9 @@ func New(cfg Config) (http.Handler, error) {
 	root = theme(root)
 	root = sameOrigin(root)
 	root = securityHeaders(root)
+	root = gzipResponses(root)
 	root = logRequests(cfg.Log, root)
-	root = recoverPanics(cfg.Log, root)
+	root = recoverPanics(cfg.Log, h.ErrorPage, root)
 	return root, nil
 }
 

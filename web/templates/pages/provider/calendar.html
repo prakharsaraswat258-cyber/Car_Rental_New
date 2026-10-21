@@ -3,7 +3,8 @@
 <header class="row-between" style="margin-bottom:var(--s-5);flex-wrap:wrap">
   <div>
     <h1 class="console-title">Calendar</h1>
-    <p class="muted">{{$d.Title}}. Tap a start day, then an end day on a row to block it. Tap a grey block to remove it.</p>
+    <p class="muted">{{$d.Title}}. Drag across days on a row to block them for maintenance (on a phone: tap the first day, then the last). Tap a hatched block to remove it.</p>
+    <p class="tiny muted">Keyboard: arrow keys move between days, Shift + arrows select a range, Enter blocks it, Esc cancels.</p>
   </div>
   <div class="row">
     <a class="icon-btn" href="{{$d.PrevURL}}" aria-label="Previous week">{{icon "chevron-left"}}</a>

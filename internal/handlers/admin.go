@@ -15,6 +15,7 @@ type AdminData struct {
 	Status   string
 	Bookings []store.Booking
 	Statuses []domain.Status
+	Charts   []Chart
 }
 
 // Admin is the overview: KPI tiles, shops, latest bookings.
@@ -35,7 +36,27 @@ func (h *Handlers) Admin(w http.ResponseWriter, r *http.Request) {
 		h.serverError(w, r, err)
 		return
 	}
-	h.render(w, r, http.StatusOK, "admin/overview", "Admin · Saarthi", "admin", AdminData{K: k, Shops: shops, Recent: recent})
+	series, err := h.Store.DailySeries(ctx, 30)
+	if err != nil {
+		h.serverError(w, r, err)
+		return
+	}
+	h.render(w, r, http.StatusOK, "admin/overview", "Admin · Saarthi", "admin",
+		AdminData{K: k, Shops: shops, Recent: recent, Charts: adminCharts(series)})
+}
+
+// AdminBooking shows one booking with angle-matched proof photos.
+func (h *Handlers) AdminBooking(w http.ResponseWriter, r *http.Request) {
+	b, err := h.Store.BookingByID(r.Context(), r.PathValue("id"))
+	if err != nil {
+		h.notFound(w, r)
+		return
+	}
+	events, _ := h.Store.BookingEvents(r.Context(), b.ID)
+	photos, _ := h.Store.TripPhotos(r.Context(), b.ID)
+	dep, _ := h.depositView(r.Context(), b)
+	h.render(w, r, http.StatusOK, "admin/booking", b.Code+" · Admin · Saarthi", "admin-bookings",
+		TripData{B: b, Events: events, Deposit: dep, Steps: domain.TripSteps, Pairs: photoPairs(photos, b.Electric())})
 }
 
 // AdminShopStatus verifies or suspends a shop.

@@ -7,25 +7,45 @@
   </nav>
   <div class="split">
     <div class="stack-8">
-      <section class="gallery" data-gallery aria-label="Photos">
-        <div class="gallery-hero tint-{{$v.Art}}" style="view-transition-name: v-{{$v.ID}}" data-gallery-hero>
-          {{template "media" (dict "Cover" $v.Cover "Art" $v.Art "Name" $v.Name)}}
-          <form class="vcard-compare" method="post" action="/compare/{{$v.ID}}" data-compare-form>
-            <button class="icon-btn on-media" type="submit" aria-pressed="{{if $d.InCompare}}true{{else}}false{{end}}" data-compare="{{$v.ID}}" aria-label="Compare {{$v.Name}}" title="Compare">{{icon "git-compare"}}</button>
-          </form>
+      <section class="gallery" data-gallery aria-label="Photos of the {{$v.Name}}">
+        <div class="gallery-grid" data-gallery-track>
+          {{range $i, $g := $d.Gallery}}
+          <button type="button" class="gallery-item tint-{{$v.Art}}{{if eq $i 0}} is-hero{{end}}" data-gallery-open="{{$i}}"
+            aria-label="Open {{lower $g.Label}} full screen"{{if eq $i 0}} style="view-transition-name: v-{{$v.ID}}"{{end}}>
+            {{if $g.Photo}}<img class="fade-img" src="{{$g.Photo}}" alt="{{$g.Label}}" width="1200" height="750" {{if gt $i 0}}loading="lazy"{{end}} decoding="async">
+            {{else}}<span class="gallery-art{{if $g.Mirror}} is-mirror{{end}}{{if $g.Turn}} is-turn{{end}}">{{art $g.Art}}</span>{{end}}
+            {{if eq $i 0}}<span class="gallery-count tiny">{{icon "image" "sm"}}{{len $d.Gallery}}</span>{{end}}
+          </button>
+          {{end}}
         </div>
-        {{if gt (len $v.Photos) 1}}
-        <div class="gallery-thumbs">
-          {{range $i, $p := $v.Photos}}<button type="button" data-gallery-src="{{$p.URL}}" aria-pressed="{{if eq $i 0}}true{{else}}false{{end}}" aria-label="Photo {{add $i 1}}"><img src="{{$p.URL}}" alt="" loading="lazy"></button>{{end}}
-        </div>
-        {{end}}
+        <div class="gallery-dots" aria-hidden="true">{{range $i, $g := $d.Gallery}}<span{{if eq $i 0}} class="is-on"{{end}}></span>{{end}}</div>
+        <form class="vcard-compare" method="post" action="/compare/{{$v.ID}}" data-compare-form>
+          <button class="icon-btn on-media" type="submit" aria-pressed="{{if $d.InCompare}}true{{else}}false{{end}}" data-compare="{{$v.ID}}" aria-label="Compare {{$v.Name}}" title="Compare">{{icon "git-compare"}}</button>
+        </form>
+        {{if not $v.Photos}}<p class="tiny muted gallery-note">Line drawings until {{$v.ShopName}} adds photos.</p>{{end}}
       </section>
+
+      <dialog class="lightbox" id="lightbox" data-lightbox aria-label="Photos of the {{$v.Name}}">
+        <div class="lb-top"><span class="small" data-lb-count aria-live="polite"></span><button class="icon-btn on-media" type="button" data-lb-close aria-label="Close">{{icon "x"}}</button></div>
+        <div class="lb-stage" data-lb-stage>
+          {{range $i, $g := $d.Gallery}}
+          <figure class="lb-slide tint-{{$v.Art}}" data-lb-slide="{{$i}}"{{if gt $i 0}} hidden{{end}}>
+            {{if $g.Photo}}<img src="{{$g.Photo}}" alt="{{$g.Label}}" width="1600" height="1000" loading="lazy" decoding="async">
+            {{else}}<span class="gallery-art{{if $g.Mirror}} is-mirror{{end}}{{if $g.Turn}} is-turn{{end}}">{{art $g.Art}}</span>{{end}}
+            <figcaption>{{$g.Label}}</figcaption>
+          </figure>
+          {{end}}
+        </div>
+        <button class="lb-nav lb-prev icon-btn on-media" type="button" data-lb-prev aria-label="Previous photo">{{icon "chevron-left"}}</button>
+        <button class="lb-nav lb-next icon-btn on-media" type="button" data-lb-next aria-label="Next photo">{{icon "chevron-right"}}</button>
+        <p class="lb-hint tiny">Swipe, use the arrow keys, or pull down to close.</p>
+      </dialog>
 
       <header class="detail-title stack-2">
         <div class="row-wrap">
           <span class="rating">{{icon "star"}}{{$v.RatingText}}{{if $v.RatingCount}} <span class="muted">· {{$v.RatingCount}} trips rated</span>{{end}}</span>
-          {{if not $v.InstantBook}}<span class="chip chip-status tone-warn">The shop confirms this one</span>{{else}}<span class="chip chip-status tone-good">Instant book</span>{{end}}
-          {{if not $v.Searchable}}<span class="chip chip-status tone-muted">Not visible to renters</span>{{end}}
+          {{if not $v.InstantBook}}<span class="chip chip-status tone-warn">{{icon "hourglass" "sm"}}The shop confirms this one</span>{{else}}<span class="chip chip-status tone-good">{{icon "zap" "sm"}}Instant book</span>{{end}}
+          {{if not $v.Searchable}}<span class="chip chip-status tone-muted">{{icon "eye-off" "sm"}}Not visible to renters</span>{{end}}
         </div>
         <h1 class="display">{{$v.Name}}{{if $v.Year}} <span class="muted" style="font-size:.6em">{{$v.Year}}</span>{{end}}</h1>
         <p class="muted">{{$v.ShopName}} · {{$v.Place}}</p>
@@ -65,7 +85,8 @@
         <h2 id="shop-h" class="sr-only">The shop</h2>
         <div class="row">
           <span class="shop-logo">{{initial $v.ShopName}}</span>
-          <div class="grow"><b>{{$v.ShopName}}</b><p class="small muted">{{$v.ShopAddress}}</p></div>
+          <div class="grow"><a class="strong" href="/s/{{$v.ShopSlug}}">{{$v.ShopName}}</a><p class="small muted">{{$v.ShopAddress}}</p></div>
+          <a class="btn btn-ghost btn-sm" href="/s/{{$v.ShopSlug}}">All their rides {{icon "arrow-right" "sm"}}</a>
         </div>
         <div class="mini-map" data-map data-pins="{{$d.Map}}" data-static aria-label="Map showing {{$v.ShopName}}"></div>
         <div class="row-wrap">

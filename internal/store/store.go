@@ -56,7 +56,34 @@ func Open(dir string) (*Store, error) {
 		db.Close()
 		return nil, fmt.Errorf("create schema: %w", err)
 	}
+	if err := checkVersion(db); err != nil {
+		db.Close()
+		return nil, err
+	}
 	return &Store{DB: db, Dir: dir, UploadDir: uploads, Now: time.Now}, nil
+}
+
+// SchemaVersion goes up whenever schema.sql changes in a way CREATE IF NOT
+// EXISTS can't apply. Demo data is reseedable, so old databases are reset
+// rather than migrated (D-003).
+const SchemaVersion = 2
+
+func checkVersion(db *sql.DB) error {
+	var v, users int
+	if err := db.QueryRow(`PRAGMA user_version`).Scan(&v); err != nil {
+		return err
+	}
+	if v == SchemaVersion {
+		return nil
+	}
+	if err := db.QueryRow(`SELECT COUNT(*) FROM users`).Scan(&users); err != nil {
+		return err
+	}
+	if users > 0 && v < SchemaVersion {
+		return fmt.Errorf("the demo database is from an older Saarthi build; start once with: go run ./cmd/saarthi -reset")
+	}
+	_, err := db.Exec(fmt.Sprintf(`PRAGMA user_version = %d`, SchemaVersion))
+	return err
 }
 
 // dsn turns on WAL, foreign keys and a busy timeout, and makes every

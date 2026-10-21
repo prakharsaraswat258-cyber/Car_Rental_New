@@ -11,41 +11,60 @@ import (
 	"saarthi/internal/store"
 )
 
-// AngleView is one tile on the check-in / return checklist.
+// AngleView is one shot on the check-in / return checklist.
 type AngleView struct {
 	Code, Phase, Angle, Label, Hint string
+	Guide                           string // art name for the camera overlay
+	Mirror, Turn                    bool   // flip the side view / tilt for a 3/4 view
 	Photo                           *store.TripPhoto
 	Required                        bool
 }
 
-func angleLabel(a string) string {
+// angleLabel names a shot (templates without the fuel/charge context).
+func angleLabel(a string) string { return domain.ShotLabel(a, false) }
+
+func angleHint(a string, electric bool) string {
 	switch a {
-	case "front":
-		return "Front"
-	case "back":
-		return "Back"
-	case "left":
-		return "Left side"
-	case "right":
-		return "Right side"
-	case "odometer":
-		return "Odometer"
+	case domain.ShotOdometer:
+		return "Add a photo of the odometer, so the kilometres are on record."
+	case domain.ShotFuel:
+		if electric {
+			return "Add a photo of the charge level, so it's on record."
+		}
+		return "Add a photo of the fuel gauge, so the level is on record."
 	}
-	return a
+	return "Take the " + lower(domain.ShotLabel(a, electric)) + " too, so old scratches are on record."
 }
 
-func angleHint(a string) string {
-	switch a {
-	case "front":
-		return "Take the front too, so old scratches are on record."
-	case "back":
-		return "Take the back too, so old scratches are on record."
-	case "left":
-		return "Take the left side too, so old scratches are on record."
-	case "right":
-		return "Take the right side too, so old scratches are on record."
+func lower(s string) string {
+	if s == "" {
+		return s
 	}
-	return "A photo of the odometer helps if there's a question about kilometres."
+	return string(s[0]|0x20) + s[1:]
+}
+
+// guide picks the silhouette the camera overlays for a shot.
+func guide(b store.Booking, shot string) (name string, mirror, turn bool) {
+	side := b.Art()
+	switch shot {
+	case domain.ShotFront, domain.ShotRear:
+		return frontArt(side), false, false
+	case domain.ShotOdometer, domain.ShotFuel:
+		return "gauge", false, false
+	case domain.ShotLeft:
+		return side, true, false
+	case domain.ShotFrontLeft, domain.ShotRearLeft:
+		return side, true, true
+	case domain.ShotFrontRight, domain.ShotRearRight:
+		return side, false, true
+	}
+	return side, false, false
+}
+
+func angleView(b store.Booking, phase, shot string, p *store.TripPhoto) AngleView {
+	g, mirror, turn := guide(b, shot)
+	return AngleView{Code: b.Code, Phase: phase, Angle: shot, Label: domain.ShotLabel(shot, b.Electric()),
+		Hint: angleHint(shot, b.Electric()), Guide: g, Mirror: mirror, Turn: turn, Photo: p, Required: true}
 }
 
 // CheckinData feeds the check-in and return pages.
@@ -55,6 +74,7 @@ type CheckinData struct {
 	Title      string
 	Lead       string
 	Angles     []AngleView
+	Car        bool // 8-angle walk-around
 	NeedsOdo   bool
 	Odo        int
 	OdoMin     int
@@ -64,26 +84,33 @@ type CheckinData struct {
 }
 
 func (h *Handlers) checkinData(b store.Booking, phase string, photos []store.TripPhoto) CheckinData {
-	d := CheckinData{B: b, Phase: phase, NeedsOdo: b.VehicleType != "cycle"}
+	d := CheckinData{B: b, Phase: phase, NeedsOdo: b.VehicleType != "cycle", Car: b.Class() == domain.ClassFourWheeler}
 	have := map[string]*store.TripPhoto{}
 	for i := range photos {
 		if photos[i].Phase == phase {
 			have[photos[i].Angle] = &photos[i]
 		}
 	}
-	for _, a := range store.TripAngles {
-		if a == "odometer" && !d.NeedsOdo {
-			continue
+	for _, a := range domain.ProofShots(b.Class()) {
+		d.Angles = append(d.Angles, angleView(b, phase, a, have[a]))
+	}
+	angles := "Four photos"
+	extra := " and the odometer"
+	if d.Car {
+		angles, extra = "Eight photos around the car", ", the odometer and the fuel gauge"
+		if b.Electric() {
+			extra = ", the odometer and the charge level"
 		}
-		d.Angles = append(d.Angles, AngleView{Code: b.Code, Phase: phase, Angle: a, Label: angleLabel(a), Hint: angleHint(a),
-			Photo: have[a], Required: a != "odometer"})
+	}
+	if !d.NeedsOdo {
+		extra = ""
 	}
 	if phase == "checkin" {
-		d.Title, d.Lead = "Check in", "Four photos and the odometer, then swipe to start. Photos are timestamped so nobody can blame you later."
+		d.Title, d.Lead = "Check in", angles+extra+", then swipe to start."
 		d.SwipeLabel, d.DoneLabel, d.Action = "Swipe to start trip", "Starting…", "/trips/"+b.Code+"/start"
 		d.Odo = b.OdoStart
 	} else {
-		d.Title, d.Lead = "Return", "Same four photos, then the odometer. The shop inspects right after."
+		d.Title, d.Lead = "Return", "The same "+lower(angles)+extra+". The shop inspects right after."
 		d.SwipeLabel, d.DoneLabel, d.Action = "Swipe to end trip", "Ending…", "/trips/"+b.Code+"/end"
 		d.OdoMin = b.OdoStart
 	}
@@ -127,7 +154,7 @@ func (h *Handlers) UploadTripPhoto(w http.ResponseWriter, r *http.Request) {
 	r.Body = http.MaxBytesReader(w, r.Body, store.MaxUploadBytes+1<<20)
 	phase, angle := r.FormValue("phase"), r.FormValue("angle")
 	if (phase == "checkin" && b.Status != domain.StatusReady) || (phase == "return" && b.Status != domain.StatusActive) ||
-		(phase != "checkin" && phase != "return") || !contains(store.TripAngles, angle) {
+		(phase != "checkin" && phase != "return") || !contains(domain.ProofShots(b.Class()), angle) {
 		badRequest(w, "Photos can't be added at this step.")
 		return
 	}
@@ -158,8 +185,7 @@ func (h *Handlers) UploadTripPhoto(w http.ResponseWriter, r *http.Request) {
 	if old != "" && old != rel {
 		h.Store.RemoveUpload(old)
 	}
-	h.Views.Fragment(w, http.StatusOK, "angle-tile", AngleView{Code: b.Code, Phase: phase, Angle: angle, Label: angleLabel(angle),
-		Hint: angleHint(angle), Photo: &p, Required: angle != "odometer"})
+	h.Views.Fragment(w, http.StatusOK, "angle-tile", angleView(b, phase, angle, &p))
 }
 
 // StartTrip is the swipe at pickup.

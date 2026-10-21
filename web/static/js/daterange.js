@@ -13,6 +13,15 @@ const DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const toDate = (s) => { const [y, m, d] = s.split("-").map(Number); return new Date(Date.UTC(y, m - 1, d)); };
 const toStr = (d) => d.toISOString().slice(0, 10);
 const addDays = (s, n) => { const d = toDate(s); d.setUTCDate(d.getUTCDate() + n); return toStr(d); };
+const addMonths = (s, n) => {
+  const d = toDate(s), day = d.getUTCDate();
+  d.setUTCDate(1);
+  d.setUTCMonth(d.getUTCMonth() + n);
+  const last = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 0)).getUTCDate();
+  d.setUTCDate(Math.min(day, last));
+  return toStr(d);
+};
+const weekday = (s) => (toDate(s).getUTCDay() + 6) % 7; // Monday = 0
 
 function clockLabel(hhmm) {
   let [h, m] = hhmm.split(":").map(Number);
@@ -89,6 +98,7 @@ class Picker {
       const b = e.target.closest("[data-day]");
       if (b && !b.disabled) this.pick(b.dataset.day);
     });
+    d.querySelector("[data-months]").addEventListener("keydown", (e) => this.key(e));
     document.dispatchEvent(new CustomEvent("saarthi:init", { detail: d }));
   }
 
@@ -100,8 +110,41 @@ class Picker {
       if (![...s.options].some((o) => o.value === v)) s.add(new Option(clockLabel(v), v));
       s.value = v;
     }
+    this.focusDay = this.start || this.today;
     openSheet(this.dialog);
     this.render(); // after opening: pills need real layout
+  }
+
+  // grid keys: arrows move a day / week, PageUp/PageDown a month,
+  // Home/End the week's edges; Enter/Space are the buttons' own click
+  key(e) {
+    const b = e.target.closest("[data-day]");
+    if (!b) return;
+    const day = b.dataset.day;
+    let next;
+    switch (e.key) {
+      case "ArrowRight": next = addDays(day, 1); break;
+      case "ArrowLeft": next = addDays(day, -1); break;
+      case "ArrowDown": next = addDays(day, 7); break;
+      case "ArrowUp": next = addDays(day, -7); break;
+      case "PageDown": next = addMonths(day, 1); break;
+      case "PageUp": next = addMonths(day, -1); break;
+      case "Home": next = addDays(day, -weekday(day)); break;
+      case "End": next = addDays(day, 6 - weekday(day)); break;
+      default: return;
+    }
+    e.preventDefault();
+    if (next < this.today) next = this.today;
+    this.focusDay = next;
+    const after = addMonths(this.view, 2);
+    if (next < this.view) this.view = next.slice(0, 7) + "-01";
+    else if (next >= after) this.view = addMonths(next.slice(0, 7) + "-01", -1);
+    this.render();
+    this.focusCurrent();
+  }
+
+  focusCurrent() {
+    this.dialog.querySelector(`[data-day="${this.focusDay}"]`)?.focus();
   }
 
   shift(n) {
@@ -130,7 +173,7 @@ class Picker {
       if (s === this.end) cls.push("is-end");
       const past = s < this.today;
       const label = `${dayLabel(s)}${this.busy.has(s) ? ", partly or fully booked" : ""}`;
-      cells += `<button type="button" class="${cls.join(" ")}" data-day="${s}" ${past ? "disabled" : ""} aria-label="${esc(label)}" aria-pressed="${s === this.start || s === this.end}">${day}</button>`;
+      cells += `<button type="button" class="${cls.join(" ")}" data-day="${s}" tabindex="${s === this.focusDay ? 0 : -1}" ${past ? "disabled" : ""} aria-label="${esc(label)}" aria-pressed="${s === this.start || s === this.end}">${day}</button>`;
     }
     return `<div class="drp-month"><h3>${MONTHS[m]} ${y}</h3><div class="drp-grid">${cells}</div></div>`;
   }
@@ -140,6 +183,12 @@ class Picker {
     const second = toDate(this.view);
     second.setUTCMonth(second.getUTCMonth() + 1);
     box.innerHTML = this.month(this.view) + this.month(toStr(second));
+    // roving tabindex: if the focus day scrolled out of view, the first
+    // open day takes the tab stop
+    if (!box.querySelector('[data-day][tabindex="0"]:not([disabled])')) {
+      const first = box.querySelector("[data-day]:not([disabled])");
+      if (first) { first.tabIndex = 0; this.focusDay = first.dataset.day; }
+    }
     this.dialog.querySelector("[data-prev]").disabled = this.view <= this.today.slice(0, 7) + "-01";
     this.pills(animate);
     this.summary();
@@ -175,14 +224,16 @@ class Picker {
   }
 
   pick(day) {
+    this.focusDay = day;
     if (!this.start || (this.start && this.end) || day < this.start) {
       this.start = day;
       this.end = null;
       this.render();
-      return;
+    } else {
+      this.end = day;
+      this.render(true);
     }
-    this.end = day;
-    this.render(true);
+    this.focusCurrent(); // the grid was rebuilt under the pointer / keyboard
   }
 
   summary() {

@@ -61,6 +61,7 @@
   --road-soft: #E1EEEC;
 
   --good: #2F7D4F;
+  --good-ink: #256B42;       /* good as small text on good-soft (AA) */
   --good-soft: #E3F1E8;
   --warn: #B7791F;
   --warn-ink: #8A5A12;       /* warn as text on paper (AA) */
@@ -151,6 +152,7 @@
   --road-ink: #1B1A18;
   --road-soft: #22322F;
   --good: #5DB37E;
+  --good-ink: #5DB37E;
   --good-soft: #213328;
   --warn: #E0A84B;
   --warn-ink: #E0A84B;
@@ -184,6 +186,7 @@
     --road-ink: #1B1A18;
     --road-soft: #22322F;
     --good: #5DB37E;
+  --good-ink: #5DB37E;
     --good-soft: #213328;
     --warn: #E0A84B;
     --warn-ink: #E0A84B;

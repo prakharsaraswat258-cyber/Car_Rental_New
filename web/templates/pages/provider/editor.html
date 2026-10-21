@@ -16,13 +16,13 @@
 
 <div class="editor" data-editor>
   <div>
-    <form id="vehicle-form" method="post" action="{{$d.Action}}" class="stack-6" data-submit-loading novalidate>
+    <form id="vehicle-form" method="post" action="{{$d.Action}}" class="stack-6" data-submit-loading data-validate novalidate>
       <input type="hidden" name="step" value="{{$d.Step}}" data-step-input>
-      {{with index $d.Errors "publish"}}{{template "form-error" .}}{{end}}
+      {{template "error-summary" (dict "Errors" $d.Errors)}}
 
       <section class="step-panel card stack" data-step-panel="basics" {{if ne $d.Step "basics"}}hidden{{end}}>
         <h2 class="h3">Basics</h2>
-        <div class="field">
+        <div class="field" id="f-type" tabindex="-1">
           <span class="field-label">Type</span>
           <div class="row-wrap">
             <label class="chip chip-filter"><input type="radio" name="type" value="scooter" {{if eq $in.Type "scooter"}}checked{{end}} data-preview="type"><span>Scooter</span></label>
@@ -34,8 +34,8 @@
           {{with index $d.Errors "type"}}<span class="field-error">{{.}}</span>{{end}}
         </div>
         <div class="form-grid two">
-          <label class="field"><span class="field-label">Make</span><input class="input" name="make" value="{{$in.Make}}" placeholder="Honda" required data-preview="make" {{if index $d.Errors "make"}}aria-invalid="true"{{end}}>{{with index $d.Errors "make"}}<span class="field-error">{{.}}</span>{{end}}</label>
-          <label class="field"><span class="field-label">Model</span><input class="input" name="model" value="{{$in.Model}}" placeholder="Activa 6G" required data-preview="model" {{if index $d.Errors "model"}}aria-invalid="true"{{end}}>{{with index $d.Errors "model"}}<span class="field-error">{{.}}</span>{{end}}</label>
+          <label class="field"><span class="field-label">Make</span><input id="f-make" class="input" name="make" data-msg-required="Add the make, like Honda." value="{{$in.Make}}" placeholder="Honda" required data-preview="make" {{if index $d.Errors "make"}}aria-invalid="true"{{end}}>{{with index $d.Errors "make"}}<span class="field-error">{{.}}</span>{{end}}</label>
+          <label class="field"><span class="field-label">Model</span><input id="f-model" class="input" name="model" data-msg-required="Add the model, like Activa 6G." value="{{$in.Model}}" placeholder="Activa 6G" required data-preview="model" {{if index $d.Errors "model"}}aria-invalid="true"{{end}}>{{with index $d.Errors "model"}}<span class="field-error">{{.}}</span>{{end}}</label>
         </div>
         <div class="form-grid three">
           <label class="field"><span class="field-label">Year</span><input class="input" type="number" name="year" value="{{if $in.Year}}{{$in.Year}}{{end}}" min="1990" max="2030" inputmode="numeric"></label>
@@ -61,7 +61,7 @@
       <section class="step-panel card stack" data-step-panel="pricing" {{if ne $d.Step "pricing"}}hidden{{end}}>
         <h2 class="h3">Pricing</h2>
         <div class="form-grid three">
-          <label class="field"><span class="field-label">Per hour</span><span class="input-group"><span class="addon">₹</span><input class="input" type="number" name="hourly" value="{{if $in.Hourly}}{{$in.Hourly.WholeRupees}}{{end}}" min="0" step="5" inputmode="numeric" data-preview="hourly"></span>{{with index $d.Errors "hourly"}}<span class="field-error">{{.}}</span>{{end}}</label>
+          <label class="field"><span class="field-label">Per hour</span><span class="input-group"><span class="addon">₹</span><input id="f-hourly" class="input" type="number" name="hourly" value="{{if $in.Hourly}}{{$in.Hourly.WholeRupees}}{{end}}" min="0" step="5" inputmode="numeric" data-preview="hourly"></span>{{with index $d.Errors "hourly"}}<span class="field-error">{{.}}</span>{{end}}</label>
           <label class="field"><span class="field-label">Per day (cap)</span><span class="input-group"><span class="addon">₹</span><input class="input" type="number" name="daily" value="{{if $in.Daily}}{{$in.Daily.WholeRupees}}{{end}}" min="0" step="10" inputmode="numeric" data-preview="daily"></span><span class="field-hint">A day never costs more than this.</span></label>
           <label class="field"><span class="field-label">Refundable deposit</span><span class="input-group"><span class="addon">₹</span><input class="input" type="number" name="deposit" value="{{if $in.Deposit}}{{$in.Deposit.WholeRupees}}{{end}}" min="0" step="100" inputmode="numeric" data-preview="deposit"></span></label>
         </div>
@@ -76,7 +76,7 @@
             <label class="switch"><input type="checkbox" name="instant" {{if $in.InstantBook}}checked{{end}}><span class="switch-track"><span class="switch-thumb"></span></span><span>Instant book <span class="small muted">· off means you accept each request</span></span></label>
           </div>
         </div>
-        <ul class="publish-gate plain" role="list" data-gate>
+        <ul class="publish-gate plain" role="list" data-gate id="f-publish">
           {{range $d.Gate}}<li class="{{if .Done}}is-done{{end}}">{{if .Done}}{{icon "circle-check" "sm"}}{{else}}{{icon "circle-dot" "sm"}}{{end}}{{.Text}}</li>{{end}}
         </ul>
         <div class="row" style="justify-content:flex-end;flex-wrap:wrap">

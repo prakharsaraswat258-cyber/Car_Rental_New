@@ -214,15 +214,20 @@ func TestTripLifecycle(t *testing.T) {
 	if _, err := s.StartTrip(ctx, renter, b.Code, 7300); !errors.Is(err, ErrPhotosMissing) {
 		t.Fatalf("start without photos: %v", err)
 	}
-	for _, a := range []string{"front", "back", "left", "right"} {
+	// a two-wheeler needs 4 angles + the odometer
+	for _, a := range []string{"front", "rear", "left", "right"} {
 		if _, _, err := s.SaveTripPhoto(ctx, b.ID, "checkin", a, "x.jpg"); err != nil {
 			t.Fatal(err)
 		}
 	}
+	if _, err := s.StartTrip(ctx, renter, b.Code, 7300); !errors.Is(err, ErrPhotosMissing) {
+		t.Fatalf("start without the odometer photo: %v", err)
+	}
+	s.SaveTripPhoto(ctx, b.ID, "checkin", "odometer", "x.jpg")
 	if b, err = s.StartTrip(ctx, renter, b.Code, 7300); err != nil || b.Status != domain.StatusActive {
 		t.Fatalf("start: %v %s", err, b.Status)
 	}
-	for _, a := range []string{"front", "back", "left", "right"} {
+	for _, a := range domain.ProofShots(domain.ClassTwoWheeler) {
 		s.SaveTripPhoto(ctx, b.ID, "return", a, "y.jpg")
 	}
 	if _, err := s.EndTrip(ctx, renter, b.Code, 7000); !errors.Is(err, ErrOdometer) {

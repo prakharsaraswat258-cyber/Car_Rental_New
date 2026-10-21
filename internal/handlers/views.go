@@ -20,6 +20,20 @@ type CardView struct {
 	Href      string
 	InCompare bool
 	FreeFrom  string // "Free from Thu 12 Nov" for suggestions
+
+	Distance     float64 // km from DistanceFrom (search with a place)
+	DistanceFrom string
+}
+
+// DistanceText is "1.2 km from Nakki Lake" (empty without a place).
+func (c CardView) DistanceText() string {
+	if c.DistanceFrom == "" {
+		return ""
+	}
+	if c.Distance < 0.95 {
+		return fmt.Sprintf("%.0f m from %s", math.Max(50, math.Round(c.Distance*20)*50), c.DistanceFrom)
+	}
+	return fmt.Sprintf("%.1f km from %s", c.Distance, c.DistanceFrom)
 }
 
 // dayQuote prices 24 hours from now, for "from ₹531 a day, all-in".

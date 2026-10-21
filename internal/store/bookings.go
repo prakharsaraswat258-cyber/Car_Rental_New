@@ -227,9 +227,16 @@ type Booking struct {
 	DepositReleasedAt time.Time
 	DepositCreditedAt time.Time
 
-	CheckinPhotos, ReturnPhotos int
-	Reviewed                    bool
+	VehicleFuel               string
+	CheckinShots, ReturnShots map[string]bool // proof shots uploaded per phase
+	Reviewed                  bool
 }
+
+// Class is two_wheeler, four_wheeler or cycle.
+func (b Booking) Class() string { return domain.ClassOf(b.VehicleType, b.VehicleSeats) }
+
+// Electric reports an EV (the fuel shot becomes a charge-level shot).
+func (b Booking) Electric() bool { return b.VehicleFuel == "electric" }
 
 // VehicleName is "Honda Activa 6G".
 func (b Booking) VehicleName() string { return strings.TrimSpace(b.VehicleMake + " " + b.VehicleModel) }
@@ -245,11 +252,11 @@ func (b Booking) Cover() string {
 	return "/vphotos/" + b.CoverID
 }
 
-// CheckedIn is true once all four check-in angles are in.
-func (b Booking) CheckedIn() bool { return b.CheckinPhotos >= 4 }
+// CheckedIn is true once every check-in shot for the vehicle class is in.
+func (b Booking) CheckedIn() bool { return domain.ShotsComplete(b.Class(), b.CheckinShots) }
 
-// ReturnPhotosDone is true once all four return angles are in.
-func (b Booking) ReturnPhotosDone() bool { return b.ReturnPhotos >= 4 }
+// ReturnPhotosDone is true once every return shot is in.
+func (b Booking) ReturnPhotosDone() bool { return domain.ShotsComplete(b.Class(), b.ReturnShots) }
 
 // Step is the renter status-line position (domain.TripStep).
 func (b Booking) Step() int { return domain.TripStep(b.Status, b.CheckedIn()) }
@@ -327,8 +334,9 @@ const bookingSelect = `SELECT b.id, b.code, b.renter_id, b.vehicle_id, b.shop_id
 	u.name, u.email, u.phone,
 	s.name, s.address, s.phone, s.whatsapp, s.owner_id, s.lat, s.lng,
 	COALESCE(d.status, ''), COALESCE(d.held_paise, 0), COALESCE(d.deducted_paise, 0), COALESCE(d.released_at, ''), COALESCE(d.credited_at, ''),
-	(SELECT COUNT(*) FROM trip_photos tp WHERE tp.booking_id = b.id AND tp.phase = 'checkin' AND tp.angle IN ('front','back','left','right')),
-	(SELECT COUNT(*) FROM trip_photos tp WHERE tp.booking_id = b.id AND tp.phase = 'return' AND tp.angle IN ('front','back','left','right')),
+	v.fuel,
+	COALESCE((SELECT GROUP_CONCAT(tp.angle) FROM trip_photos tp WHERE tp.booking_id = b.id AND tp.phase = 'checkin'), ''),
+	COALESCE((SELECT GROUP_CONCAT(tp.angle) FROM trip_photos tp WHERE tp.booking_id = b.id AND tp.phase = 'return'), ''),
 	EXISTS (SELECT 1 FROM reviews r WHERE r.booking_id = b.id)
 FROM bookings b
 JOIN vehicles v ON v.id = b.vehicle_id
@@ -338,7 +346,7 @@ LEFT JOIN deposits d ON d.booking_id = b.id`
 
 func scanBooking(row scanner) (Booking, error) {
 	var b Booking
-	var start, end, returned, created, updated, lines, status, depStatus, relAt, credAt string
+	var start, end, returned, created, updated, lines, status, depStatus, relAt, credAt, inShots, outShots string
 	var instant, reviewed int
 	err := row.Scan(&b.ID, &b.Code, &b.RenterID, &b.VehicleID, &b.ShopID, &start, &end, &status,
 		&b.Rent, &b.Addons, &b.Tax, &b.Total, &b.Deposit, &b.KmIncluded, &lines,
@@ -348,13 +356,14 @@ func scanBooking(row scanner) (Booking, error) {
 		&b.RenterName, &b.RenterEmail, &b.RenterPhone,
 		&b.ShopName, &b.ShopAddress, &b.ShopPhone, &b.ShopWhatsApp, &b.ShopOwnerID, &b.ShopLat, &b.ShopLng,
 		&depStatus, &b.DepositHeld, &b.DepositDeducted, &relAt, &credAt,
-		&b.CheckinPhotos, &b.ReturnPhotos, &reviewed)
+		&b.VehicleFuel, &inShots, &outShots, &reviewed)
 	if errors.Is(err, sql.ErrNoRows) {
 		return b, ErrNotFound
 	}
 	if err != nil {
 		return b, err
 	}
+	b.CheckinShots, b.ReturnShots = shotSet(inShots), shotSet(outShots)
 	b.Status = domain.Status(status)
 	b.DepositStatus = domain.DepositStatus(depStatus)
 	b.InstantBook = instant == 1
@@ -372,6 +381,16 @@ func scanBooking(row scanner) (Booking, error) {
 		return b, fmt.Errorf("price lines: %w", err)
 	}
 	return b, nil
+}
+
+func shotSet(csv string) map[string]bool {
+	m := map[string]bool{}
+	for _, s := range strings.Split(csv, ",") {
+		if s != "" {
+			m[s] = true
+		}
+	}
+	return m
 }
 
 func (s *Store) queryBookings(ctx context.Context, where string, args ...any) ([]Booking, error) {

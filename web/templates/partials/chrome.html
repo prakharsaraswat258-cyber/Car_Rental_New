@@ -1,7 +1,7 @@
 {{/* Shared page chrome: top bar, bottom tabs, sidebar, theme switch, footer, overlays. */}}
 
 {{define "topbar"}}
-<header class="topbar">
+<header class="topbar" data-sticky>
   <div class="container topbar-inner">
     {{template "brand"}}
     <nav class="topnav" aria-label="Main">
@@ -34,12 +34,14 @@
   {{template "brand"}}
   {{if and .User .User.IsAdmin}}
   <nav class="side-nav" aria-label="Admin">
+    <button class="side-mobile-only menu-link" type="button" data-palette-open aria-label="Search">{{icon "search"}}</button>
     <a href="/admin" {{if eq .Nav "admin"}}aria-current="page"{{end}}>{{icon "layout-dashboard"}}Overview</a>
     <a href="/admin/bookings" {{if eq .Nav "admin-bookings"}}aria-current="page"{{end}}>{{icon "receipt"}}Bookings</a>
     <a href="/" class="side-mobile-only">{{icon "compass"}}Explore</a>
   </nav>
   {{else}}
   <nav class="side-nav" aria-label="Shop">
+    <button class="side-mobile-only menu-link" type="button" data-palette-open aria-label="Search">{{icon "search"}}</button>
     <a href="/p" {{if eq .Nav "today"}}aria-current="page"{{end}}>{{icon "sunrise"}}Today</a>
     <a href="/p/fleet" {{if eq .Nav "fleet"}}aria-current="page"{{end}}>{{icon "car-front"}}Fleet</a>
     <a href="/p/calendar" {{if eq .Nav "calendar"}}aria-current="page"{{end}}>{{icon "calendar-days"}}Calendar</a>
@@ -49,7 +51,7 @@
   <div class="side-shop">
     <b>{{.Shop.Name}}</b>
     <span class="muted">{{.Shop.Place}}</span>
-    <span>{{if eq .Shop.Status "verified"}}<span class="chip chip-status tone-good">Verified</span>{{else if eq .Shop.Status "pending"}}<span class="chip chip-status tone-warn">Verification pending</span>{{else}}<span class="chip chip-status tone-bad">Suspended</span>{{end}}</span>
+    <span>{{template "shop-status" .Shop.Status}}</span>
   </div>
   {{end}}
   {{end}}

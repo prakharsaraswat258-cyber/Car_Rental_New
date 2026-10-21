@@ -1,7 +1,7 @@
 // Leaflet map with price pins. Tiles follow the theme (CARTO light/dark).
 // Pins and cards highlight each other on hover. Search results swapped by
 // htmx bring fresh pins.
-import { all, once, esc } from "./motion.js";
+import { all, once, esc, loadScript, loadCSS } from "./motion.js";
 import { isDark } from "./theme.js";
 
 const TILES = {
@@ -63,14 +63,25 @@ function setup(el) {
 }
 
 let wired = false;
+
+// Leaflet is only fetched on pages that have a map (performance budget).
+function leaflet() {
+  if (window.L) return Promise.resolve(window.L);
+  const b = document.body.dataset;
+  return Promise.all([loadCSS(b.leafletCss), loadScript(b.leafletJs)]).then(() => window.L);
+}
+
 export function initMaps(root) {
-  if (!window.L) return;
-  for (const el of all(root, "[data-map]")) {
-    if (!once(el, "mapReady")) continue;
-    // maps inside hidden containers wait until shown
-    if (el.offsetParent === null && !el.closest(".map-wrap")) continue;
-    setup(el);
-  }
+  const maps = all(root, "[data-map]").filter((el) => !el.dataset.mapReady);
+  if (!maps.length) return;
+  leaflet().then(() => {
+    for (const el of maps) {
+      if (!once(el, "mapReady")) continue;
+      // maps inside hidden containers wait until shown
+      if (el.offsetParent === null && !el.closest(".map-wrap")) { delete el.dataset.mapReady; continue; }
+      setup(el);
+    }
+  }).catch(() => maps.forEach((el) => { el.textContent = "The map couldn't load. The list still works."; }));
   if (!wired) {
     wired = true;
     document.addEventListener("htmx:afterSwap", (e) => {

@@ -9,6 +9,8 @@ function anyOpen() {
 
 export function openSheet(d) {
   if (!d) return;
+  // focus goes back to whatever opened the sheet once it closes
+  if (!d.open) d._returnTo = document.activeElement;
   if (!d.open) d.showModal();
   document.body.classList.add("has-modal");
   requestAnimationFrame(() => requestAnimationFrame(() => d.classList.add("is-shown")));
@@ -27,6 +29,9 @@ export function closeSheet(d) {
     d.classList.remove("is-dragging");
     if (d.open) d.close();
     if (!anyOpen()) document.body.classList.remove("has-modal");
+    const back = d._returnTo;
+    d._returnTo = null;
+    if (back?.isConnected && !anyOpen()) back.focus({ preventScroll: true });
     if (d.dataset.ephemeral) d.remove();
   };
   setTimeout(done, reduced() ? 130 : 320);

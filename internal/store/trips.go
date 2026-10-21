@@ -22,7 +22,8 @@ func (p TripPhoto) URL() string { return "/photos/" + p.ID }
 // TripPhotos lists a booking's proof photos.
 func (s *Store) TripPhotos(ctx context.Context, bookingID string) ([]TripPhoto, error) {
 	rows, err := s.DB.QueryContext(ctx, `SELECT id, booking_id, phase, angle, path, taken_at FROM trip_photos
-		WHERE booking_id = ? ORDER BY phase, CASE angle WHEN 'front' THEN 0 WHEN 'back' THEN 1 WHEN 'left' THEN 2 WHEN 'right' THEN 3 ELSE 4 END`, bookingID)
+		WHERE booking_id = ? ORDER BY phase, CASE angle WHEN 'front' THEN 0 WHEN 'front_left' THEN 1 WHEN 'left' THEN 2 WHEN 'rear_left' THEN 3
+			WHEN 'rear' THEN 4 WHEN 'rear_right' THEN 5 WHEN 'right' THEN 6 WHEN 'front_right' THEN 7 WHEN 'odometer' THEN 8 ELSE 9 END`, bookingID)
 	if err != nil {
 		return nil, err
 	}

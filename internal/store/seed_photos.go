@@ -9,13 +9,12 @@ import (
 	"os"
 	"path/filepath"
 	"time"
+
+	"saarthi/internal/domain"
 )
 
-// TripAngles are the proof-photo angles, in checklist order.
-var TripAngles = []string{"front", "back", "left", "right", "odometer"}
-
 // tripPhotos writes generated placeholder JPEGs for one phase of a seeded
-// booking and records them (D-026).
+// booking and records them (D-026). The shots follow the vehicle class.
 func (sd *seeder) tripPhotos(bookingID, phase string, b seedBooking, v seedVehicle) {
 	if sd.err != nil {
 		return
@@ -25,7 +24,7 @@ func (sd *seeder) tripPhotos(bookingID, phase string, b seedBooking, v seedVehic
 		base = b.returned.Add(-6 * time.Minute)
 	}
 	body := bodyColours[len(v.key)%len(bodyColours)]
-	for i, angle := range TripAngles {
+	for i, angle := range domain.ProofShots(domain.ClassOf(v.typ, v.seats)) {
 		rel := filepath.ToSlash(filepath.Join("trips", bookingID, phase+"-"+angle+".jpg"))
 		if err := writePlaceholderPhoto(filepath.Join(sd.uploads, rel), angle, body); err != nil {
 			sd.err = fmt.Errorf("seed photo: %w", err)
@@ -48,10 +47,15 @@ var bodyColours = []color.RGBA{
 func writePlaceholderPhoto(path, angle string, body color.RGBA) error {
 	const w, h = 640, 480
 	img := image.NewRGBA(image.Rect(0, 0, w, h))
-	if angle == "odometer" {
-		paintDial(img)
-	} else {
-		paintVehicle(img, angle == "left" || angle == "right", body)
+	switch angle {
+	case domain.ShotOdometer:
+		paintDial(img, 0.7)
+	case domain.ShotFuel:
+		paintDial(img, 2.2)
+	case domain.ShotFront, domain.ShotRear:
+		paintVehicle(img, false, body)
+	default:
+		paintVehicle(img, true, body)
 	}
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		return err
@@ -140,7 +144,7 @@ func paintVehicle(img *image.RGBA, side bool, bodyCol color.RGBA) {
 	}
 }
 
-func paintDial(img *image.RGBA) {
+func paintDial(img *image.RGBA, needle float64) {
 	b := img.Bounds()
 	w, h := float64(b.Dx()), float64(b.Dy())
 	cx, cy, r := w/2, h/2, h*0.32
@@ -161,7 +165,7 @@ func paintDial(img *image.RGBA) {
 			}
 			// needle from centre towards upper right
 			ang := math.Atan2(cy-fy, fx-cx)
-			if d < r*0.85 && math.Abs(ang-0.7) < 0.03 {
+			if d < r*0.85 && math.Abs(ang-needle) < 0.03 {
 				c = accent
 			}
 			img.SetRGBA(x, y, c.rgba())

@@ -1,15 +1,18 @@
-{{/* Provider and admin layout: left sidebar + top bar (top strip on mobile). */}}
+{{/* Provider and admin layout: left sidebar + top bar (top strip on mobile), Ctrl K palette. */}}
 {{define "console"}}<!doctype html>
 <html{{template "html-attrs" .}}>
 {{template "head" .}}
-<body class="layout-console {{.Body}}" data-sprite="{{asset "/static/img/icons.svg"}}">
+<body class="layout-console {{.Body}}"{{template "body-attrs" .}}>
   <a class="skip-link" href="#main">Skip to content</a>
   <div class="console">
     {{template "sidebar" .}}
     <div class="console-main">
-      <header class="console-top">
-        <p class="small muted">{{if .Shop}}{{.Shop.Name}} · {{.Shop.Place}}{{else}}Saarthi admin{{end}}</p>
+      <header class="console-top" data-sticky>
+        <button class="palette-trigger" type="button" data-palette-open aria-keyshortcuts="Control+K Meta+K">
+          {{icon "search" "sm"}}<span>Search or jump to…</span><kbd>Ctrl K</kbd>
+        </button>
         <div class="row">
+          <button class="icon-btn" type="button" data-sheet-open="shortcuts" aria-label="Keyboard shortcuts" aria-keyshortcuts="Shift+?">{{icon "circle-help"}}</button>
           {{template "theme-switch" .}}
           {{if .User}}<a class="avatar" href="/account" title="{{.User.Email}}" aria-label="Account">{{initial .User.Name}}</a>{{end}}
         </div>
@@ -19,7 +22,46 @@
       </main>
     </div>
   </div>
+  {{template "palette" .}}
   {{template "overlays" .}}
   {{template "scripts" .}}
 </body>
 </html>{{end}}
+
+{{define "palette"}}
+{{$admin := and .User .User.IsAdmin}}
+<dialog class="dialog palette" id="palette" data-sheet data-palette aria-label="Command palette">
+  <div class="dialog-panel palette-panel">
+    <div class="palette-input">
+      {{icon "search"}}
+      <input type="search" name="q" autocomplete="off" spellcheck="false" role="combobox" aria-expanded="true" aria-controls="palette-list" aria-autocomplete="list"
+        aria-label="Jump to a page, booking or vehicle" placeholder="Pages, booking codes, renters, reg numbers"
+        hx-get="{{if $admin}}/admin/palette{{else}}/p/palette{{end}}" hx-trigger="input changed delay:120ms, palette:open" hx-target="#palette-results" hx-swap="innerHTML" hx-sync="this:replace" data-palette-input>
+      <kbd>Esc</kbd>
+    </div>
+    <div id="palette-results" class="palette-results"></div>
+    <p class="palette-foot tiny muted"><kbd>↑</kbd><kbd>↓</kbd> move · <kbd>Enter</kbd> open · <kbd>?</kbd> all shortcuts</p>
+  </div>
+</dialog>
+<dialog class="sheet" id="shortcuts" data-sheet aria-labelledby="shortcuts-title">
+  <div class="sheet-panel">
+    <div class="sheet-handle" data-sheet-handle></div>
+    <header class="sheet-head"><h2 id="shortcuts-title">Keyboard shortcuts</h2><button class="icon-btn" type="button" data-sheet-close aria-label="Close">{{icon "x"}}</button></header>
+    <div class="sheet-body">
+      <dl class="shortcut-list">
+        <div><dt><kbd>Ctrl</kbd> <kbd>K</kbd></dt><dd>Search pages, bookings and vehicles</dd></div>
+        <div><dt><kbd>/</kbd></dt><dd>Focus search</dd></div>
+        {{if not $admin}}
+        <div><dt><kbd>N</kbd></dt><dd>Add a new vehicle</dd></div>
+        <div><dt><kbd>B</kbd></dt><dd>Block dates on the calendar</dd></div>
+        <div><dt><kbd>←</kbd> <kbd>→</kbd> <kbd>↑</kbd> <kbd>↓</kbd></dt><dd>Move between calendar days</dd></div>
+        <div><dt><kbd>Shift</kbd> + arrows</dt><dd>Select a range of days</dd></div>
+        <div><dt><kbd>Enter</kbd></dt><dd>Block the selected days</dd></div>
+        {{end}}
+        <div><dt><kbd>?</kbd></dt><dd>Show this list</dd></div>
+        <div><dt><kbd>Esc</kbd></dt><dd>Close any sheet or dialog</dd></div>
+      </dl>
+    </div>
+  </div>
+</dialog>
+{{end}}

@@ -33,9 +33,9 @@
       {{if eq $d.Tab "upcoming"}}
       {{template "empty" (dict "Art" "scooter" "Title" "No trips yet. Where to first?" "Text" "Describe the trip like a text and Saarthi finds what's free." "URL" "/" "Label" "Find a ride")}}
       {{else if eq $d.Tab "active"}}
-      {{template "empty" (dict "Art" "bike" "Title" "Nothing on the road right now." "Text" "Trips show here from pickup until the deposit is back.")}}
+      {{template "empty" (dict "Art" "il-quiet" "Title" "Nothing on the road right now." "Text" "Trips show here from pickup until the deposit is back.")}}
       {{else}}
-      {{template "empty" (dict "Art" "cycle" "Title" "No past trips yet." "Text" "Closed trips and their receipts live here.")}}
+      {{template "empty" (dict "Art" "il-calendar" "Title" "No past trips yet." "Text" "Closed trips and their receipts live here.")}}
       {{end}}
     {{end}}
   </div>

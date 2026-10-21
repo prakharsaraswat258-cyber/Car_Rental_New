@@ -13,18 +13,27 @@ import { initMaps } from "./map.js";
 import { initStatusLines } from "./statusline.js";
 import { initDeposits } from "./deposit.js";
 import { initUploads } from "./upload.js";
+import { initCamera } from "./camera.js";
 import { initSwipes } from "./swipe.js";
 import { initPass } from "./pass.js";
 import { initProviderCalendar } from "./pcal.js";
 import { initEditor } from "./editor.js";
 import { initInspect } from "./inspect.js";
+import { initGallery } from "./gallery.js";
+import { initWipes } from "./wipe.js";
+import { initHelp } from "./help.js";
+import { initCharts } from "./chart.js";
+import { initPalette } from "./palette.js";
+import { initForms } from "./forms.js";
+import { initPWA } from "./pwa.js";
 import { initMisc } from "./misc.js";
 import { initStyleguide } from "./styleguide.js";
 
 const components = [
   initThemeSwitch, initToasts, initLoader, initSheets, initOdometers, initComposer, initDatePickers,
-  initCompare, initMaps, initStatusLines, initDeposits, initUploads, initSwipes, initPass,
-  initProviderCalendar, initEditor, initInspect, initMisc, initStyleguide,
+  initCompare, initMaps, initStatusLines, initDeposits, initUploads, initCamera, initSwipes, initPass,
+  initProviderCalendar, initEditor, initInspect, initGallery, initWipes, initHelp, initCharts,
+  initPalette, initForms, initPWA, initMisc, initStyleguide,
 ];
 
 function init(root) {
@@ -44,6 +53,6 @@ function start() {
   document.addEventListener("saarthi:init", (e) => init(e.detail));
 }
 
-// htmx, Motion and Leaflet are classic deferred scripts placed before this
-// module, so they have run by now.
+// htmx is a classic deferred script placed before this module, so it has
+// run by now. Motion and Leaflet load on demand (see motion.js / map.js).
 start();

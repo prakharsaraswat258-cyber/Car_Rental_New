@@ -31,11 +31,12 @@
 
       {{template "deposit-tracker" $d.Deposit}}
 
-      {{if $d.Checkin}}
-      <section aria-labelledby="ph-in"><h2 id="ph-in" class="section-title">Pickup photos {{template "tip" "Photos are timestamped so nobody can blame you later"}}</h2>{{template "photo-grid" $d.Checkin}}</section>
-      {{end}}
-      {{if $d.Return}}
-      <section aria-labelledby="ph-out"><h2 id="ph-out" class="section-title">Return photos</h2>{{template "photo-grid" $d.Return}}</section>
+      {{if $d.Pairs}}
+      <section aria-labelledby="ph-h">
+        <h2 id="ph-h" class="section-title">{{if $d.Return}}Pickup vs return, angle by angle{{else}}Pickup photos{{end}} {{template "tip" "Photos are timestamped so nobody can blame you later"}}</h2>
+        {{if $d.Return}}<p class="small muted" style="margin-bottom:12px">Drag the slider on each photo to wipe between pickup and return.</p>{{end}}
+        {{template "photo-compare" $d.Pairs}}
+      </section>
       {{end}}
 
       {{with $d.Review}}

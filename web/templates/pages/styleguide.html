@@ -72,8 +72,8 @@
       <div class="chips"><span class="chip">{{icon "gauge"}}Scooter</span><label class="chip chip-filter"><input type="checkbox" checked><span>Bike</span></label><label class="chip chip-filter"><input type="checkbox"><span>Car</span></label><button class="chip chip-sm">Small</button></div>
       <div class="chips"><span class="chip chip-ask">{{icon "map-pin"}}Mount Abu<a class="chip-x" href="#chips" aria-label="Remove">{{icon "x" "sm"}}</a></span><span class="chip chip-ask">{{icon "calendar"}}Wed 21 Oct, 9 am → Thu 22 Oct, 9 am<span class="chip-assumed">1 day, assumed</span></span></div>
       <div class="chips">
-        <span class="chip chip-status tone-good">Confirmed</span><span class="chip chip-status tone-warn">Waiting for the shop</span><span class="chip chip-status tone-road">On trip</span>
-        <span class="chip chip-status tone-bad">Declined by shop</span><span class="chip chip-status tone-muted">Hidden</span>
+        <span class="chip chip-status tone-good">{{icon "circle-check" "sm"}}Confirmed</span><span class="chip chip-status tone-warn">{{icon "hourglass" "sm"}}Waiting for the shop</span><span class="chip chip-status tone-road">{{icon "route" "sm"}}On trip</span>
+        <span class="chip chip-status tone-bad">{{icon "circle-x" "sm"}}Declined by shop</span><span class="chip chip-status tone-muted">{{icon "eye-off" "sm"}}Hidden</span><span class="chip chip-status tone-good">{{icon "badge-check" "sm"}}Closed</span>
       </div>
     </div>
   </section>
@@ -148,15 +148,15 @@
   </section>
 
   <section class="sg-section" id="photos">
-    <h2>Proof photos</h2><p class="muted">Each uploaded angle fills its part of the silhouette in teal. All four unlock the swipe.</p>
+    <h2>Proof photos</h2><p class="muted">Cars walk around 8 angles plus the odometer and fuel gauge; two-wheelers 4 angles plus the odometer. Each photo fills its zone in teal; all of them unlock the swipe. The real flow uses the full-screen camera on <a class="link" href="/trips">a ready trip</a>.</p>
     <div class="checkin">
-      <div class="card">{{template "silhouette"}}</div>
+      <div class="card">{{template "silhouette" (dict "Car" true)}}</div>
       <div class="stack-3">
         <div class="row-wrap">
           <button class="btn btn-secondary btn-sm" data-demo="angle" data-angle="front">Fill front</button>
           <button class="btn btn-secondary btn-sm" data-demo="angle" data-angle="left">Fill left</button>
           <button class="btn btn-secondary btn-sm" data-demo="angle" data-angle="right">Fill right</button>
-          <button class="btn btn-secondary btn-sm" data-demo="angle" data-angle="back">Fill back</button>
+          <button class="btn btn-secondary btn-sm" data-demo="angle" data-angle="rear">Fill rear</button><button class="btn btn-secondary btn-sm" data-demo="angle" data-angle="front_left">Fill front left</button><button class="btn btn-secondary btn-sm" data-demo="angle" data-angle="rear_right">Fill rear right</button>
           <button class="btn btn-ghost btn-sm" data-demo="angle-reset">Reset</button>
         </div>
         <ul class="photogrid" role="list">
@@ -165,6 +165,38 @@
           <li><figure class="missing">Left side</figure></li>
           <li><figure class="missing">Right side</figure></li>
         </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="sg-section" id="compare-photos">
+    <h2>Before / after wipe</h2><p class="muted">Pickup and return photos of the same angle, stacked. Drag the slider (or use the arrow keys) to wipe between them.</p>
+    <div class="sg-grid">
+      <div class="pc-item">
+        <div class="pc-head"><b>Front left</b><span class="tiny muted">Pickup Tue 20 Oct, 9:05 am · Return Thu 22 Oct, 8:40 am</span></div>
+        <div class="pc-wipe" data-wipe>
+          <span class="pc-layer tint-car">{{art "car"}}</span>
+          <span class="pc-layer pc-after tint-ev-car">{{art "ev-car"}}</span>
+          <span class="pc-tag pc-tag-before">Pickup</span><span class="pc-tag pc-tag-after">Return</span>
+          <span class="pc-handle" aria-hidden="true">{{icon "arrow-right-left" "sm"}}</span>
+          <input class="pc-range" type="range" min="0" max="100" value="50" aria-label="Wipe between pickup and return, demo">
+        </div>
+      </div>
+      <div class="card stack-3">
+        <b>Help popovers</b>
+        <p class="small muted">Every term from the tooltip table gets a "?" that opens on tap, click or Enter, and closes on Esc or a tap outside. Never hover-only.</p>
+        <div class="stack-2 small">
+          <span class="row">Total {{template "tip" "Rent, fees and taxes for your dates. Deposit shown separately"}}</span>
+          <span class="row">Refundable deposit {{template "tip" "Held during the trip and returned after inspection"}}</span>
+          <span class="row">Late fee {{template "tip" "Charged per hour after your return time, after 30 min grace"}}</span>
+          <span class="row">Proof photos {{template "tip" "Photos are timestamped so nobody can blame you later"}}</span>
+        </div>
+      </div>
+      <div class="pass" style="max-width:340px">
+        <div class="pass-head"><span class="row">{{template "brand-mark"}}<span><b>Pickup Pass</b><span class="tiny pass-sub">Abu Riders</span></span></span><span class="chip chip-status tone-good">{{icon "circle-check" "sm"}}Confirmed</span></div>
+        <div class="pass-hero"><div><p class="pass-label">Booking code</p><p class="pass-code">SAR-7K2QX</p><p class="small pass-when">Wed 21 Oct · 9 am</p></div><div class="pass-qr">{{qr "SAR-7K2QX"}}</div></div>
+        <div class="pass-perf" aria-hidden="true"></div>
+        <div class="pass-body"><p class="tiny muted">A wallet pass: perforated divider, big code in tabular numerals, a decorative pattern generated from the code.</p></div>
       </div>
     </div>
   </section>
@@ -194,8 +226,8 @@
     <div class="table-wrap" style="margin-top:16px"><table class="table">
       <thead><tr><th>Code</th><th>Vehicle</th><th>Status</th><th class="num">Total</th></tr></thead>
       <tbody>
-        <tr><td class="mono">SAR-7K2QX</td><td>Honda Activa 6G</td><td><span class="chip chip-status tone-good">Confirmed</span></td><td class="num">₹1,062</td></tr>
-        <tr><td class="mono">SAR-M4TZ9</td><td>Royal Enfield Classic 350</td><td><span class="chip chip-status tone-road">On trip</span></td><td class="num">₹2,124</td></tr>
+        <tr><td class="mono">SAR-7K2QX</td><td>Honda Activa 6G</td><td><span class="chip chip-status tone-good">{{icon "circle-check" "sm"}}Confirmed</span></td><td class="num">₹1,062</td></tr>
+        <tr><td class="mono">SAR-M4TZ9</td><td>Royal Enfield Classic 350</td><td><span class="chip chip-status tone-road">{{icon "route" "sm"}}On trip</span></td><td class="num">₹2,124</td></tr>
       </tbody>
     </table></div>
   </section>

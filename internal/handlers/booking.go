@@ -162,6 +162,7 @@ type TripData struct {
 	Events    []store.Event
 	Checkin   []store.TripPhoto
 	Return    []store.TripPhoto
+	Pairs     []PhotoPair
 	Deposit   DepositView
 	Next      NextStep
 	Review    *store.Review
@@ -212,7 +213,8 @@ func (h *Handlers) Trip(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	d := TripData{B: b, Events: events, Deposit: dep, Next: nextStep(b, h.Store.Now()), Review: rev, Steps: domain.TripSteps,
-		CanCancel: b.CanCancel(h.Store.Now()), OpenPay: r.URL.Query().Get("pay") == "1" && b.Status == domain.StatusPendingPayment}
+		CanCancel: b.CanCancel(h.Store.Now()), OpenPay: r.URL.Query().Get("pay") == "1" && b.Status == domain.StatusPendingPayment,
+		Pairs: photoPairs(photos, b.Electric())}
 	for _, p := range photos {
 		if p.Phase == "checkin" {
 			d.Checkin = append(d.Checkin, p)
@@ -239,9 +241,13 @@ func (h *Handlers) DepositFragment(w http.ResponseWriter, r *http.Request) {
 
 // PassData feeds the Pickup Pass.
 type PassData struct {
-	B      store.Booking
-	Reveal bool
+	B        store.Booking
+	Reveal   bool
+	ShowTips bool // "How pickup works", until dismissed (cookie)
 }
+
+// TipsCookie remembers that the "How pickup works" card was dismissed.
+const TipsCookie = "pickup_tips"
 
 // Pass is the Pickup Pass.
 func (h *Handlers) Pass(w http.ResponseWriter, r *http.Request) {
@@ -257,7 +263,9 @@ func (h *Handlers) Pass(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/trips/"+b.Code, http.StatusSeeOther)
 		return
 	}
-	h.render(w, r, http.StatusOK, "pass", "Pickup Pass "+b.Code+" · Saarthi", "trips", PassData{B: b, Reveal: r.URL.Query().Get("new") == "1"})
+	_, dismissed := r.Cookie(TipsCookie)
+	h.render(w, r, http.StatusOK, "pass", "Pickup Pass "+b.Code+" · Saarthi", "trips",
+		PassData{B: b, Reveal: r.URL.Query().Get("new") == "1", ShowTips: dismissed != nil})
 }
 
 // PassICS is the Add to calendar file.
@@ -279,6 +287,9 @@ func (h *Handlers) PassICS(w http.ResponseWriter, r *http.Request) {
 		"DTEND:" + b.End.UTC().Format(f),
 		"SUMMARY:" + esc(b.VehicleName()+" from "+b.ShopName+" · "+b.Code),
 		"LOCATION:" + esc(b.ShopName+", "+b.ShopAddress),
+		fmt.Sprintf("GEO:%.5f;%.5f", b.ShopLat, b.ShopLng),
+		"URL:" + scheme(r) + "://" + r.Host + "/trips/" + b.Code + "/pass",
+		"STATUS:CONFIRMED", "TRANSP:OPAQUE",
 		"DESCRIPTION:" + esc(fmt.Sprintf("Pickup Pass %s.\nBring your driving licence and one photo ID.\nTotal paid %s. Refundable deposit %s.\nShop: %s",
 			b.Code, b.Total, b.Deposit, b.ShopPhone)),
 		"BEGIN:VALARM", "TRIGGER:-PT1H", "ACTION:DISPLAY", "DESCRIPTION:" + esc("Pickup in an hour: "+b.VehicleName()), "END:VALARM",
@@ -287,6 +298,13 @@ func (h *Handlers) PassICS(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/calendar; charset=utf-8")
 	w.Header().Set("Content-Disposition", `attachment; filename="saarthi-`+b.Code+`.ics"`)
 	w.Write([]byte(strings.Join(lines, "\r\n") + "\r\n"))
+}
+
+func scheme(r *http.Request) string {
+	if r.TLS != nil {
+		return "https"
+	}
+	return "http"
 }
 
 // CancelTrip cancels a booking (free until 24 h before pickup).

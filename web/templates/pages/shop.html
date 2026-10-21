@@ -1,0 +1,48 @@
+{{define "content"}}
+{{$d := .Data}}{{$s := $d.S}}
+<div class="container">
+  <header class="shop-hero">
+    <span class="shop-logo lg" aria-hidden="true">{{initial $s.Name}}</span>
+    <div class="stack-2 grow">
+      <p class="eyebrow">{{$s.Place}}</p>
+      <h1 class="display h2">{{$s.Name}}</h1>
+      <div class="row-wrap">
+        {{if $d.RatingCount}}<span class="rating">{{icon "star"}}{{f1 $d.Rating}} <span class="muted">· {{$d.RatingCount}} trips rated</span></span>{{end}}
+        {{template "shop-status" $s.Status}}
+        <span class="small muted">{{$s.LiveCount}} rides live</span>
+      </div>
+      <p class="small muted">{{$s.Address}}</p>
+    </div>
+    <div class="shop-actions">
+      <a class="btn btn-primary" href="{{$d.WhatsApp}}" target="_blank" rel="noopener">{{icon "message-circle" "sm"}}WhatsApp</a>
+      <a class="btn btn-secondary" href="{{tel $s.Phone}}">{{icon "phone" "sm"}}Call</a>
+    </div>
+  </header>
+
+  <section class="section" aria-labelledby="rides-h" style="padding-top:var(--s-4)">
+    <h2 id="rides-h" class="section-title">Rides from {{$s.Name}}</h2>
+    {{if $d.Cards}}
+    <div class="cards cols-3" data-stagger>{{range $d.Cards}}{{template "vehicle-card" .}}{{end}}</div>
+    {{else}}
+    <div class="card">{{template "empty" (dict "Art" "il-quiet" "Title" "Nothing live right now." "Text" "This shop's rides show here once they're published.")}}</div>
+    {{end}}
+  </section>
+
+  <section class="section" aria-labelledby="rev-h">
+    <h2 id="rev-h" class="section-title">What renters said</h2>
+    {{if $d.Reviews}}
+    <div class="review-grid">
+      {{range $d.Reviews}}
+      <article class="card review-card">
+        <div class="row-between"><b>{{.Author}}</b><span class="rating">{{icon "star"}}{{.Rating}}</span></div>
+        {{if .Body}}<p>{{.Body}}</p>{{end}}
+        <p class="tiny muted">{{.Vehicle}} · {{datefull .CreatedAt}}</p>
+      </article>
+      {{end}}
+    </div>
+    {{else}}
+    <p class="muted">No reviews yet.</p>
+    {{end}}
+  </section>
+</div>
+{{end}}

@@ -2,7 +2,7 @@
 {{define "app"}}<!doctype html>
 <html{{template "html-attrs" .}}>
 {{template "head" .}}
-<body class="layout-app {{.Body}}" data-sprite="{{asset "/static/img/icons.svg"}}">
+<body class="layout-app {{.Body}}"{{template "body-attrs" .}}>
   <a class="skip-link" href="#main">Skip to content</a>
   {{template "topbar" .}}
   <main id="main" tabindex="-1">

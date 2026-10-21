@@ -156,7 +156,7 @@ CREATE TABLE IF NOT EXISTS trip_photos (
   id         TEXT PRIMARY KEY,
   booking_id TEXT NOT NULL REFERENCES bookings(id) ON DELETE CASCADE,
   phase      TEXT NOT NULL CHECK (phase IN ('checkin','return')),
-  angle      TEXT NOT NULL CHECK (angle IN ('front','back','left','right','odometer')),
+  angle      TEXT NOT NULL CHECK (angle IN ('front','front_left','left','rear_left','rear','rear_right','right','front_right','odometer','fuel')),
   path       TEXT NOT NULL, -- relative to data/uploads
   taken_at   TEXT NOT NULL,
   UNIQUE (booking_id, phase, angle)

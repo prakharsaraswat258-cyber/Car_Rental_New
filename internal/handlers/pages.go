@@ -20,11 +20,45 @@ var askExamples = []string{
 
 // HomeData feeds the Explore landing page.
 type HomeData struct {
-	Examples []string
-	Popular  []CardView
-	Cities   []store.City
-	Search   SearchForm
-	Ask      *AskReply // non-JS fallback after POST /ask
+	Examples   []string
+	Popular    []CardView
+	Cities     []store.City
+	Search     SearchForm
+	Ask        *AskReply // non-JS fallback after POST /ask
+	Categories []Category
+}
+
+// Category is one tile of the home category strip.
+type Category struct {
+	Type, Label, Art, URL string
+	Count                 int
+	From                  domain.Paise
+}
+
+func (h *Handlers) categories(r *http.Request) []Category {
+	all, err := h.Store.CandidateVehicles(r.Context(), store.SearchFilter{})
+	if err != nil {
+		return nil
+	}
+	art := map[string]string{"scooter": "scooter", "bike": "bike", "car": "car", "ev": "ev-scooter", "cycle": "cycle"}
+	label := map[string]string{"scooter": "Scooters", "bike": "Bikes", "car": "Cars", "ev": "EVs", "cycle": "Cycles"}
+	var out []Category
+	now := h.Store.Now()
+	for _, t := range domain.VehicleTypes {
+		c := Category{Type: t, Label: label[t], Art: art[t], URL: "/search?type=" + t}
+		for _, v := range all {
+			if v.Type != t {
+				continue
+			}
+			c.Count++
+			if d := dayQuote(v, now); c.From == 0 || d < c.From {
+				c.From = d
+			}
+		}
+		out = append(out, c)
+	}
+	out = append(out, Category{Type: "all", Label: "Everything", Art: "car", URL: "/search", Count: len(all)})
+	return out
 }
 
 // Home is the explore landing page with Ask Saarthi.
@@ -46,11 +80,12 @@ func (h *Handlers) home(w http.ResponseWriter, r *http.Request, ask *AskReply) {
 	}
 	p := h.page(w, r, "Saarthi · Rent a ride from local shops", "explore", nil)
 	p.Data = HomeData{
-		Examples: askExamples,
-		Popular:  h.cards(popular, time.Time{}, time.Time{}, p.InCompare),
-		Cities:   cities,
-		Search:   SearchForm{Cities: cities, DRP: newDRP(time.Time{}, time.Time{}, h.Store.Now(), nil)},
-		Ask:      ask,
+		Examples:   askExamples,
+		Popular:    h.cards(popular, time.Time{}, time.Time{}, p.InCompare),
+		Cities:     cities,
+		Search:     SearchForm{Cities: cities, DRP: newDRP(time.Time{}, time.Time{}, h.Store.Now(), nil)},
+		Ask:        ask,
+		Categories: h.categories(r),
 	}
 	h.Views.Page(w, r, http.StatusOK, "home", p)
 }
@@ -153,9 +188,9 @@ func (h *Handlers) Styleguide(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handlers) serverError(w http.ResponseWriter, r *http.Request, err error) {
 	h.Log.Error("handler", "path", r.URL.Path, "err", err)
-	msg := "Something went wrong on our side. Please try again."
 	if h.Dev && err != nil {
-		msg = err.Error()
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
-	http.Error(w, msg, http.StatusInternalServerError)
+	h.ErrorPage(w, r)
 }

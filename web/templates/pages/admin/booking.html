@@ -1,0 +1,32 @@
+{{define "content"}}
+{{$d := .Data}}{{$b := $d.B}}
+<header class="stack-2" style="margin-bottom:var(--s-6)">
+  <a class="link small" href="/admin/bookings">{{icon "chevron-left" "sm"}}Bookings</a>
+  <div class="row-between" style="flex-wrap:wrap">
+    <h1 class="console-title"><span class="mono">{{$b.Code}}</span></h1>
+    {{template "status-chip" $b.Status}}
+  </div>
+  <p class="muted">{{$b.RenterName}} · {{$b.VehicleName}} from {{$b.ShopName}} · {{rangeText $b.Start $b.End}}</p>
+</header>
+<div class="split">
+  <div class="stack-6">
+    <section class="card">{{template "status-line" $b}}</section>
+    <section aria-labelledby="ph-h">
+      <h2 id="ph-h" class="section-title">Proof photos, angle by angle</h2>
+      {{if $d.Pairs}}{{template "photo-compare" $d.Pairs}}{{else}}<div class="card">{{template "empty" (dict "Art" "il-checklist" "Title" "No proof photos yet." "Text" "They appear here once the renter checks in.")}}</div>{{end}}
+    </section>
+    <section class="card"><h2 class="h3" style="margin-bottom:12px">Timeline</h2><ol class="timeline plain" role="list">{{range $d.Events}}<li><div>{{.Note}}<time>{{date .At}}, {{clock .At}}</time></div></li>{{end}}</ol></section>
+  </div>
+  <aside class="stack">
+    <section class="card stack"><h2 class="h3">Bill</h2>{{template "bill" $b.Lines}}</section>
+    {{if ge $d.Deposit.Stop 0}}
+    <section class="card stack-2"><h2 class="h3">Deposit</h2>
+      <p>{{rupees $b.DepositHeld}} held{{if ge $d.Deposit.Stop 2}} · {{rupees $b.Refund}} back to the renter{{end}}</p>
+      {{range $d.Deposit.Items}}<p class="small"><b>{{.Kind.Label}}</b> −{{rupees .Amount}} <span class="muted">{{.Note}}</span></p>{{end}}
+    </section>
+    {{end}}
+    <section class="card stack-2"><b>Renter</b><p class="small">{{$b.RenterName}} · {{$b.RenterEmail}}</p>{{if $b.RenterPhone}}<a class="btn btn-secondary btn-sm" href="{{tel $b.RenterPhone}}">{{icon "phone" "sm"}}{{$b.RenterPhone}}</a>{{end}}</section>
+    <section class="card stack-2"><b>Shop</b><p class="small">{{$b.ShopName}} · {{$b.ShopAddress}}</p></section>
+  </aside>
+</div>
+{{end}}

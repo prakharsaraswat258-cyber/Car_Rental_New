@@ -219,6 +219,13 @@ func (v *Views) funcs() template.FuncMap {
 		},
 		"json":       toJSON,
 		"angleLabel": angleLabel,
+		"shotLabel":  domain.ShotLabel,
+		"frontArt":   frontArt,
+		"statusIcon": statusIcon,
+		"uid":        uid,
+		"qr":         qrPattern,
+		"pctf":       func(a, b float64) string { return fmt.Sprintf("%.2f%%", a/b*100) },
+		"f1":         func(f float64) string { return fmt.Sprintf("%.1f", f) },
 		"split": func(s, sep string) []string {
 			if strings.TrimSpace(s) == "" {
 				return nil

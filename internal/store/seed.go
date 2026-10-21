@@ -111,6 +111,7 @@ func (sd *seeder) run() {
 	sd.seedAddons()
 	sd.seedBlocks()
 	sd.seedBookings()
+	sd.seedHistory()
 }
 
 // --- users -------------------------------------------------------------------
@@ -122,6 +123,10 @@ func (sd *seeder) seedUsers() {
 	}{
 		{"riya", RoleRenter, "Riya Sharma", DemoRenterEmail, "+91 90000 10001", "verified", 120},
 		{"kabir", RoleRenter, "Kabir Rao", "renter2@saarthi.test", "+91 90000 10002", "verified", 60},
+		{"meera", RoleRenter, "Meera Iyer", "renter3@saarthi.test", "+91 90000 10003", "verified", 90},
+		{"arjun", RoleRenter, "Arjun Nair", "renter4@saarthi.test", "+91 90000 10004", "verified", 75},
+		{"sana", RoleRenter, "Sana Khan", "renter5@saarthi.test", "+91 90000 10005", "verified", 50},
+		{"dev", RoleRenter, "Dev Patel", "renter6@saarthi.test", "+91 90000 10006", "pending", 40},
 		{"mahesh", RoleProvider, "Mahesh Purohit", DemoProviderEmail, "+91 90000 20001", "verified", 400},
 		{"anita", RoleProvider, "Anita D'Souza", "provider2@saarthi.test", "+91 90000 20002", "verified", 300},
 		{"joel", RoleProvider, "Joel Fernandes", "provider3@saarthi.test", "+91 90000 20003", "pending", 2},

@@ -10,19 +10,20 @@
       <a href="/signup{{if $d.Next}}?next={{$d.Next}}{{end}}" {{if ne $d.Role "provider"}}aria-current="page"{{end}}>{{icon "user-round" "sm"}}I want to rent</a>
       <a href="/signup?role=provider" {{if eq $d.Role "provider"}}aria-current="page"{{end}}>{{icon "store" "sm"}}I run a shop</a>
     </div>
-    <form method="post" action="/signup" class="stack" data-submit-loading novalidate>
+    <form method="post" action="/signup" class="stack" data-submit-loading data-validate novalidate>
+      {{template "error-summary" (dict "Errors" $d.Errors)}}
       <input type="hidden" name="next" value="{{$d.Next}}">
       <input type="hidden" name="role" value="{{$d.Role}}">
-      <label class="field"><span class="field-label">Your name</span><input class="input" name="name" autocomplete="name" required value="{{$d.Name}}" {{if index $d.Errors "name"}}aria-invalid="true"{{end}}>{{with index $d.Errors "name"}}<span class="field-error">{{.}}</span>{{end}}</label>
-      <label class="field"><span class="field-label">Email</span><input class="input" type="email" name="email" autocomplete="email" required value="{{$d.Email}}" {{if index $d.Errors "email"}}aria-invalid="true"{{end}}>{{with index $d.Errors "email"}}<span class="field-error">{{.}}</span>{{end}}</label>
-      <label class="field"><span class="field-label">Phone</span><input class="input" type="tel" name="phone" autocomplete="tel" inputmode="tel" value="{{$d.Phone}}" placeholder="+91 90000 00000"><span class="field-hint">The shop uses this to reach you at pickup.</span></label>
-      <label class="field"><span class="field-label">Password</span><input class="input" type="password" name="password" autocomplete="new-password" required minlength="8" {{if index $d.Errors "password"}}aria-invalid="true"{{end}}>{{with index $d.Errors "password"}}<span class="field-error">{{.}}</span>{{else}}<span class="field-hint">At least 8 characters.</span>{{end}}</label>
+      <label class="field"><span class="field-label">Your name</span><input id="f-name" class="input" name="name" autocomplete="name" required data-msg-required="Add your name as it appears on your licence." value="{{$d.Name}}" {{if index $d.Errors "name"}}aria-invalid="true"{{end}}>{{with index $d.Errors "name"}}<span class="field-error">{{.}}</span>{{end}}</label>
+      <label class="field"><span class="field-label">Email</span><input id="f-email" class="input" type="email" name="email" autocomplete="email" inputmode="email" required data-msg-required="Add your email." data-msg-type="That email doesn't look right." value="{{$d.Email}}" {{if index $d.Errors "email"}}aria-invalid="true"{{end}}>{{with index $d.Errors "email"}}<span class="field-error">{{.}}</span>{{end}}</label>
+      <label class="field"><span class="field-label">Phone</span><input id="f-phone" class="input" type="tel" name="phone" autocomplete="tel" inputmode="tel" value="{{$d.Phone}}" placeholder="+91 90000 00000"><span class="field-hint">The shop uses this to reach you at pickup.</span></label>
+      <label class="field"><span class="field-label">Password</span><input id="f-password" class="input" type="password" name="password" autocomplete="new-password" required minlength="8" data-msg-required="Choose a password." data-msg-short="Use at least 8 characters." {{if index $d.Errors "password"}}aria-invalid="true"{{end}}>{{with index $d.Errors "password"}}<span class="field-error">{{.}}</span>{{else}}<span class="field-hint">At least 8 characters.</span>{{end}}</label>
       {{if eq $d.Role "provider"}}
-      <label class="field"><span class="field-label">Shop name</span><input class="input" name="shop" required value="{{$d.Shop}}" {{if index $d.Errors "shop"}}aria-invalid="true"{{end}}>{{with index $d.Errors "shop"}}<span class="field-error">{{.}}</span>{{end}}</label>
+      <label class="field"><span class="field-label">Shop name</span><input id="f-shop" class="input" name="shop" autocomplete="organization" required data-msg-required="Add your shop's name." value="{{$d.Shop}}" {{if index $d.Errors "shop"}}aria-invalid="true"{{end}}>{{with index $d.Errors "shop"}}<span class="field-error">{{.}}</span>{{end}}</label>
       <label class="field"><span class="field-label">City</span>
-        <select class="input" name="city" required>{{range $d.Cities}}<option value="{{.Slug}}" {{if eq $d.City .Slug}}selected{{end}}>{{.Name}}</option>{{end}}</select>
+        <select id="f-city" class="input" name="city" required>{{range $d.Cities}}<option value="{{.Slug}}" {{if eq $d.City .Slug}}selected{{end}}>{{.Name}}</option>{{end}}</select>
         {{with index $d.Errors "city"}}<span class="field-error">{{.}}</span>{{end}}</label>
-      <label class="field"><span class="field-label">Shop address</span><input class="input" name="address" autocomplete="street-address"></label>
+      <label class="field"><span class="field-label">Shop address</span><input id="f-address" class="input" name="address" autocomplete="street-address"></label>
       {{end}}
       <button class="btn btn-primary btn-block btn-lg" type="submit">{{wheel}}<span>Continue</span></button>
     </form>

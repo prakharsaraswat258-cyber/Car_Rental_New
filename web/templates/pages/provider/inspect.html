@@ -9,17 +9,9 @@
 <div class="split">
   <div class="stack-6">
     <section class="card stack" aria-labelledby="ph-h">
-      <h2 id="ph-h" class="h3">Pickup vs return photos</h2>
-      <div class="compare-photos">
-        <div class="pair tiny muted"><span></span><span>At pickup</span><span>At return</span></div>
-        {{range $d.Pairs}}
-        <div class="pair">
-          <span class="small strong">{{angleLabel .Angle}}</span>
-          <figure>{{with .Before}}<a href="{{.URL}}" target="_blank" rel="noopener"><img src="{{.URL}}" alt="{{angleLabel .Angle}} at pickup" loading="lazy"></a>{{end}}</figure>
-          <figure>{{with .After}}<a href="{{.URL}}" target="_blank" rel="noopener"><img src="{{.URL}}" alt="{{angleLabel .Angle}} at return" loading="lazy"></a>{{end}}</figure>
-        </div>
-        {{else}}<p class="small muted">No photos were uploaded for this trip.</p>{{end}}
-      </div>
+      <h2 id="ph-h" class="h3">Pickup vs return, angle by angle</h2>
+      <p class="small muted">Drag each slider to wipe between the two photos.</p>
+      {{if $d.Pairs}}{{template "photo-compare" $d.Pairs}}{{else}}<p class="small muted">No photos were uploaded for this trip.</p>{{end}}
     </section>
 
     <form id="inspect-form" class="card stack" method="post" action="/p/bookings/{{$b.ID}}/inspect"

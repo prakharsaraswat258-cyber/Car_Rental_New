@@ -22,13 +22,57 @@ export function play(el, keyframes, opts = {}) {
   return el.animate(keyframes, { duration: DUR.base, easing: EASE, fill: "none", ...opts }).finished.catch(() => {});
 }
 
+// --- on-demand vendor scripts (performance budget: Leaflet only on map
+// pages, Motion only where a spring runs) ---------------------------------
+const loaded = new Map();
+
+export function loadScript(url) {
+  if (!url) return Promise.reject(new Error("no url"));
+  if (!loaded.has(url)) {
+    loaded.set(url, new Promise((resolve, reject) => {
+      const s = document.createElement("script");
+      s.src = url;
+      s.async = true;
+      s.onload = resolve;
+      s.onerror = () => { loaded.delete(url); reject(new Error(`failed to load ${url}`)); };
+      document.head.appendChild(s);
+    }));
+  }
+  return loaded.get(url);
+}
+
+export function loadCSS(url) {
+  if (!url || document.querySelector(`link[href="${url}"]`)) return Promise.resolve();
+  return new Promise((resolve) => {
+    const l = document.createElement("link");
+    l.rel = "stylesheet";
+    l.href = url;
+    l.onload = resolve;
+    l.onerror = resolve;
+    document.head.appendChild(l);
+  });
+}
+
+export function motion() {
+  if (window.Motion) return Promise.resolve(window.Motion);
+  return loadScript(document.body.dataset.motionJs).then(() => window.Motion);
+}
+
 // spring animates a number with Motion's spring (stiffness 260, damping 30)
-// and calls onUpdate each frame. Falls back to jumping to the end value.
-export function spring(from, to, onUpdate, opts = {}) {
-  const M = window.Motion;
-  if (reduced() || !M || typeof M.animate !== "function") {
+// and calls onUpdate each frame. Motion is fetched on first use; until it
+// arrives (or if it can't), the value jumps to the end.
+export async function spring(from, to, onUpdate, opts = {}) {
+  if (reduced()) {
     onUpdate(to);
-    return Promise.resolve();
+    return;
+  }
+  let M = window.Motion;
+  if (!M) {
+    try { M = await motion(); } catch { M = null; }
+  }
+  if (!M || typeof M.animate !== "function") {
+    onUpdate(to);
+    return;
   }
   return new Promise((resolve) => {
     try {
