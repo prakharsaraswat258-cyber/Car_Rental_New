@@ -3,6 +3,10 @@
 //	go run ./cmd/saarthi          # http://localhost:8080
 //	go run ./cmd/saarthi -reset   # wipe data/ and reseed demo data
 //	go run ./cmd/saarthi -dev     # read ./web from disk (edit → refresh)
+//
+// Hosting: $PORT sets the port and $SAARTHI_DATA the data folder. On Vercel
+// ($VERCEL set) the only writable folder is /tmp, so each new instance
+// starts there with fresh demo data (see vercel.json).
 package main
 
 import (
@@ -15,7 +19,9 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"strings"
+	"syscall"
 	"time"
 
 	"saarthi/internal/app"
@@ -29,6 +35,17 @@ func main() {
 	dataDir := flag.String("data", "data", "folder for saarthi.db and uploads")
 	dev := flag.Bool("dev", false, "serve templates and static files from ./web on disk, no caching")
 	flag.Parse()
+	set := map[string]bool{}
+	flag.Visit(func(f *flag.Flag) { set[f.Name] = true })
+	if port := os.Getenv("PORT"); port != "" && !set["addr"] {
+		*addr = ":" + port
+	}
+	if dir := os.Getenv("SAARTHI_DATA"); dir != "" && !set["data"] {
+		*dataDir = dir
+	} else if os.Getenv("VERCEL") != "" && !set["data"] {
+		*dataDir = filepath.Join(os.TempDir(), "saarthi")
+		*reset = true // a new instance never inherits a half-written demo db
+	}
 
 	log := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
 	if err := run(log, *addr, *dataDir, *reset, *dev); err != nil {
@@ -82,7 +99,7 @@ func run(log *slog.Logger, addr, dataDir string, reset, dev bool) error {
 		IdleTimeout:       120 * time.Second,
 	}
 
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
 	errc := make(chan error, 1)

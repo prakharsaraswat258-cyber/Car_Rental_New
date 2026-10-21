@@ -4,6 +4,8 @@
 # build output
 /saarthi
 /saarthi.exe
+/bin/
+.vercel/
 *.exe
 *.test
 *.out

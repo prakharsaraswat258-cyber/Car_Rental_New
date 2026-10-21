@@ -301,7 +301,8 @@ func (h *Handlers) PassICS(w http.ResponseWriter, r *http.Request) {
 }
 
 func scheme(r *http.Request) string {
-	if r.TLS != nil {
+	// behind a hosting proxy (Vercel) TLS ends before us
+	if r.TLS != nil || r.Header.Get("X-Forwarded-Proto") == "https" {
 		return "https"
 	}
 	return "http"

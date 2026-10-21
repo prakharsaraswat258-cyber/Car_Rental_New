@@ -6,8 +6,28 @@ import { toast } from "./toast.js";
 import { quality, qualityMessage } from "./camera.js";
 
 const MAX = 8 * 1024 * 1024;
+const SHRINK_OVER = 3.5 * 1024 * 1024; // hosted demo (Vercel) refuses bodies over 4.5 MB
 
 function checkin() { return document.querySelector("[data-checkin]"); }
+
+// shrink re-encodes a big photo to 1600 px JPEG before upload; the server
+// resizes to that size anyway, so nothing is lost.
+async function shrink(file) {
+  if (file.size <= SHRINK_OVER || !window.createImageBitmap) return file;
+  try {
+    const bmp = await createImageBitmap(file);
+    const s = Math.min(1, 1600 / Math.max(bmp.width, bmp.height));
+    const c = document.createElement("canvas");
+    c.width = Math.round(bmp.width * s);
+    c.height = Math.round(bmp.height * s);
+    c.getContext("2d").drawImage(bmp, 0, 0, c.width, c.height);
+    bmp.close?.();
+    const blob = await new Promise((resolve) => c.toBlob(resolve, "image/jpeg", 0.88));
+    return blob || file;
+  } catch {
+    return file;
+  }
+}
 
 export function refreshCheckin() {
   const box = checkin();
@@ -77,7 +97,6 @@ async function pickAngle(input) {
   const file = input.files?.[0];
   if (!file) return;
   const li = input.closest(".angle");
-  if (file.size > MAX) { toast({ message: "That photo is over 8 MB. Try again with a smaller one.", tone: "bad" }); input.value = ""; return; }
   const thumb = li.querySelector(".angle-thumb");
   const preview = URL.createObjectURL(file);
   const before = thumb.innerHTML;
@@ -102,7 +121,15 @@ async function pickAngle(input) {
       return;
     }
   }
-  await uploadShot(li, file);
+  const body = await shrink(file);
+  if (body.size > MAX) {
+    thumb.innerHTML = before;
+    URL.revokeObjectURL(preview);
+    input.value = "";
+    toast({ message: "That photo is over 8 MB. Try again with a smaller one.", tone: "bad" });
+    return;
+  }
+  await uploadShot(li, body);
   URL.revokeObjectURL(preview);
 }
 
@@ -110,9 +137,10 @@ async function uploadVehiclePhotos(input) {
   const files = [...(input.files || [])];
   let added = 0;
   for (const f of files) {
-    if (f.size > MAX) { toast({ message: `${f.name} is over 8 MB.`, tone: "bad" }); continue; }
+    const body = await shrink(f);
+    if (body.size > MAX) { toast({ message: `${f.name} is over 8 MB.`, tone: "bad" }); continue; }
     const fd = new FormData();
-    fd.append("photo", f);
+    fd.append("photo", body, f.name);
     const res = await request(input.dataset.photoUpload, { method: "POST", body: fd });
     const text = await res.text();
     if (!res.ok) { toast({ message: text.slice(0, 160), tone: "bad" }); continue; }

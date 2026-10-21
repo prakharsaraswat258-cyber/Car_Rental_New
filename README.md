@@ -91,4 +91,10 @@ Third-party front-end files are vendored in `web/static/vendor` and `web/static/
 
 ## Hosting
 
-GitHub keeps the code; it can't run a Go server (GitHub Pages is static files only). To put Saarthi online, run `go run ./cmd/saarthi` (or a built binary) on any host that runs Go and gives it a disk for `data/`. It's a demo: data is seeded, and payments, SMS and email are simulated.
+GitHub keeps the code; it can't run a Go server (GitHub Pages is static files only).
+
+**Vercel** (set up in `vercel.json`): import the repo, and every push to `main` deploys. Vercel's Go preset builds `./cmd/saarthi` and runs it as a server on `$PORT`. Vercel's disk is read-only except `/tmp`, so each new server instance seeds fresh demo data there. Bookings you make last while that instance is warm (minutes of idle time), then the demo resets. If Vercel runs two instances at once, they don't share data, so you may be logged out. That's fine for a demo; for lasting data, use a host with a disk.
+
+**Anywhere else**: run `go run ./cmd/saarthi` (or a built binary) on a host that runs Go and gives it a disk for `data/`. `$PORT` sets the port, `$SAARTHI_DATA` the data folder.
+
+It's a demo either way: data is seeded, and payments, SMS and email are simulated.
