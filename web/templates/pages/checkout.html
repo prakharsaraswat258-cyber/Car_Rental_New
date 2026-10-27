@@ -1,0 +1,39 @@
+{{define "content"}}
+{{$b := .Data.Box}}{{$v := $b.V}}
+<div class="container">
+  <header class="page-head">
+    <a class="link small" href="/v/{{$v.ID}}{{if $b.DRP.Start}}?start={{$b.DRP.Start}}&end={{$b.DRP.End}}{{end}}">{{icon "chevron-left" "sm"}}Back to the {{typeLabel $v.Type | lower}}</a>
+    <h1 class="display h2" style="margin-top:8px">Review and pay</h1>
+  </header>
+  <div class="split">
+    <form id="checkout-form" class="stack-6" method="post" action="/bookings"
+      hx-get="/checkout/{{$v.ID}}" hx-trigger="change" hx-target="#checkout-bill" hx-swap="outerHTML" hx-select="#checkout-bill">
+      <input type="hidden" name="vehicle" value="{{$v.ID}}">
+      <section class="card row">
+        <div class="trip-card" style="padding:0;grid-template-columns:96px 1fr">
+          <div class="media tint-{{$v.Art}}">{{template "media" (dict "Cover" $v.Cover "Art" $v.Art "Name" $v.Name)}}</div>
+          <div><h2 class="h3">{{$v.Name}}</h2><p class="small muted">{{$v.ShopName}} · {{$v.Place}}</p><p class="small">{{if $v.InstantBook}}{{icon "zap" "sm"}} Instant book{{else}}{{icon "hourglass" "sm"}} The shop confirms within about 15 minutes{{end}}</p></div>
+        </div>
+      </section>
+      <section class="stack">
+        <h2 class="section-title">Your dates</h2>
+        {{template "drp" $b.DRP}}
+      </section>
+      <section class="stack">
+        {{template "addon-rows" $b.Addons}}
+      </section>
+      <section class="card stack-2">
+        <h2 class="h3">{{icon "key-round" "sm"}} At pickup</h2>
+        <p class="small muted">Bring your driving licence and one photo ID. You'll take {{$v.ProofPhrase}} before you ride, so old scratches are on record.</p>
+      </section>
+      <p class="small muted">{{icon "rotate-ccw" "sm"}} Free cancellation until 24 h before pickup. After that, message the shop.</p>
+    </form>
+
+    <aside class="pricebox" aria-label="Bill">
+      <h2 class="h3">Itemised bill</h2>
+      {{template "checkout-bill" .Data}}
+      <div id="checkout-error"></div>
+    </aside>
+  </div>
+</div>
+{{end}}

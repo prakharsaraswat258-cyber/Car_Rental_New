@@ -1,0 +1,13 @@
+{{define "content"}}
+{{$d := .Data}}
+<div class="container auth">
+  <div class="card stack-6">
+    <div class="stack-2">
+      <h1>Welcome back</h1>
+      <p class="muted">Log in to book, track your trip and get your deposit back.</p>
+    </div>
+    {{template "login-form" (dict "Next" $d.Next "Email" $d.Email "Error" $d.Error)}}
+    <p class="small muted center">New here? <a class="link" href="/signup{{if $d.Next}}?next={{$d.Next}}{{end}}">Create an account</a> · <a class="link" href="/signup?role=provider">List your shop</a></p>
+  </div>
+</div>
+{{end}}

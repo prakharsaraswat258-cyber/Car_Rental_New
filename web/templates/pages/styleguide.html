@@ -1,0 +1,269 @@
+{{define "content"}}
+{{$d := .Data}}
+<div class="container" data-styleguide>
+  <header class="page-head stack-2">
+    <p class="eyebrow">Design system</p>
+    <h1 class="display h1">Saarthi styleguide</h1>
+    <p class="lead">The calm co-driver: warm paper, honest numbers, unhurried motion. Every component and animation, on demo data. Try the theme switch at the top and your OS reduced-motion setting.</p>
+    <nav class="sg-nav" aria-label="Sections">
+      <a class="chip chip-sm" href="#colour">Colour</a><a class="chip chip-sm" href="#type">Type</a><a class="chip chip-sm" href="#buttons">Buttons</a>
+      <a class="chip chip-sm" href="#forms">Forms</a><a class="chip chip-sm" href="#chips">Chips</a><a class="chip chip-sm" href="#composer">Composer</a>
+      <a class="chip chip-sm" href="#cards">Cards</a><a class="chip chip-sm" href="#price">Price</a><a class="chip chip-sm" href="#overlays">Sheets & toasts</a>
+      <a class="chip chip-sm" href="#states">States</a><a class="chip chip-sm" href="#trip">Trip</a><a class="chip chip-sm" href="#dates">Dates</a>
+      <a class="chip chip-sm" href="#swipe">Swipe</a><a class="chip chip-sm" href="#data">Tabs & tables</a><a class="chip chip-sm" href="#map">Map</a><a class="chip chip-sm" href="#motion">Motion</a>
+    </nav>
+  </header>
+
+  <section class="sg-section" id="colour">
+    <h2>Colour</h2><p class="muted">Saffron Clay is the one highlight per screen. Highway Teal means road, progress and focus.</p>
+    <div class="swatches">
+      {{range $d.Swatches}}<div class="swatch"><i style="background:var(--{{.}})"></i><div><b>--{{.}}</b></div></div>{{end}}
+    </div>
+  </section>
+
+  <section class="sg-section" id="type">
+    <h2>Type</h2><p class="muted">Fraunces for titles and big totals; Inter for everything else, with tabular numbers.</p>
+    <div class="type-row"><small>48</small><span class="display" style="font-size:48px">Where are you headed?</span></div>
+    <div class="type-row"><small>32</small><span class="display" style="font-size:32px">₹2,340 total</span></div>
+    <div class="type-row"><small>24</small><span style="font-size:24px;font-weight:600">Pickup Pass</span></div>
+    <div class="type-row"><small>20</small><span style="font-size:20px">Your ₹2,000 deposit returns after inspection.</span></div>
+    <div class="type-row"><small>16</small><span>Body text stays at 16 px on phones. Numbers line up: ₹1,23,456 · 21,450 km.</span></div>
+    <div class="type-row"><small>14</small><span class="small">Secondary details and table text.</span></div>
+    <div class="type-row"><small>12</small><span class="tiny muted">Captions, legends, chip labels.</span></div>
+  </section>
+
+  <section class="sg-section" id="buttons">
+    <h2>Buttons</h2><p class="muted">Scale to 0.98 on press. Loading swaps the label for a turning wheel.</p>
+    <div class="row-wrap">
+      <button class="btn btn-primary">Book for ₹1,062</button>
+      <button class="btn btn-secondary">Edit dates</button>
+      <button class="btn btn-ghost">Not now</button>
+      <button class="btn btn-danger">Cancel booking</button>
+      <button class="btn btn-primary" data-demo="loading">{{wheel}}<span>Tap to load</span></button>
+      <button class="btn btn-primary" disabled>Disabled</button>
+      <button class="icon-btn" aria-label="Close">{{icon "x"}}</button>
+      <button class="btn btn-primary btn-sm">Small</button>
+      <button class="btn btn-secondary btn-lg">Large</button>
+    </div>
+  </section>
+
+  <section class="sg-section" id="forms">
+    <h2>Forms</h2><p class="muted">Inputs have 8 px corners and a teal focus ring.</p>
+    <div class="sg-grid">
+      <label class="field"><span class="field-label">Email</span><input class="input" type="email" placeholder="you@example.com"><span class="field-hint">We never share it.</span></label>
+      <label class="field"><span class="field-label">With an error</span><input class="input" aria-invalid="true" value="riya@"><span class="field-error">{{icon "circle-alert" "sm"}}That email doesn't look right.</span></label>
+      <label class="field"><span class="field-label">City</span><select class="input"><option>Mount Abu</option><option>Goa</option></select></label>
+      <label class="field"><span class="field-label">Per day</span><span class="input-group"><span class="addon">₹</span><input class="input" type="number" value="450"></span></label>
+    </div>
+    <div class="sg-grid" style="margin-top:16px">
+      <label class="check-row"><input type="checkbox" checked><span class="check-box">{{icon "check"}}</span><span class="check-text"><b>Extra helmet</b><small>₹50 once per trip</small></span><span class="check-price">₹50</span></label>
+      <label class="check-row"><input type="checkbox"><span class="check-box">{{icon "check"}}</span><span class="check-text"><b>Phone holder</b><small>₹30 once per trip</small></span><span class="check-price">₹30</span></label>
+      <div class="stack-2">
+        <label class="switch"><input type="checkbox" checked><span class="switch-track"><span class="switch-thumb"></span></span><span>Instant book</span></label>
+        <div class="segmented"><button aria-pressed="true">Upcoming</button><button aria-pressed="false">Active</button><button aria-pressed="false">Past</button></div>
+      </div>
+      <div class="stars" role="radiogroup" aria-label="Rating demo">{{range $n := (seq 5)}}{{$s := sub 5 $n}}<input type="radio" id="sg-star-{{$s}}" name="sg-rating" value="{{$s}}" {{if eq $s 4}}checked{{end}}><label for="sg-star-{{$s}}" aria-label="{{$s}} stars">{{icon "star"}}</label>{{end}}</div>
+    </div>
+  </section>
+
+  <section class="sg-section" id="chips">
+    <h2>Chips</h2><p class="muted">Filter, status and removable chips. Pills everywhere.</p>
+    <div class="stack-3">
+      <div class="chips"><span class="chip">{{icon "gauge"}}Scooter</span><label class="chip chip-filter"><input type="checkbox" checked><span>Bike</span></label><label class="chip chip-filter"><input type="checkbox"><span>Car</span></label><button class="chip chip-sm">Small</button></div>
+      <div class="chips"><span class="chip chip-ask">{{icon "map-pin"}}Mount Abu<a class="chip-x" href="#chips" aria-label="Remove">{{icon "x" "sm"}}</a></span><span class="chip chip-ask">{{icon "calendar"}}Wed 21 Oct, 9 am → Thu 22 Oct, 9 am<span class="chip-assumed">1 day, assumed</span></span></div>
+      <div class="chips">
+        <span class="chip chip-status tone-good">{{icon "circle-check" "sm"}}Confirmed</span><span class="chip chip-status tone-warn">{{icon "hourglass" "sm"}}Waiting for the shop</span><span class="chip chip-status tone-road">{{icon "route" "sm"}}On trip</span>
+        <span class="chip chip-status tone-bad">{{icon "circle-x" "sm"}}Declined by shop</span><span class="chip chip-status tone-muted">{{icon "eye-off" "sm"}}Hidden</span><span class="chip chip-status tone-good">{{icon "badge-check" "sm"}}Closed</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="sg-section" id="composer">
+    <h2>Ask Saarthi composer</h2><p class="muted">Placeholder cycles every 4 s. Send it: matched words lift out and fly into chips (FLIP). Here it stays on the page.</p>
+    <div class="stack-3" style="max-width:820px">
+      <form class="composer composer-lg" action="/ask" method="post" data-composer data-demo-only data-examples="{{json $d.Examples}}">
+        {{icon "search"}}
+        <div class="composer-field"><input class="composer-input" name="q" type="text" autocomplete="off" placeholder=" " aria-label="Describe the trip" value="scooter in mount abu tomorrow 9am for 2 days under 800"><span class="composer-ghost" aria-hidden="true">{{index $d.Examples 0}}</span></div>
+        <button class="btn btn-primary" type="submit">{{wheel}}<span>Try it</span></button>
+      </form>
+      <div class="ask-chips" data-ask-chips></div>
+      <div class="ask-missing" data-ask-missing hidden><p data-ask-title></p><div class="row-wrap" data-ask-options></div></div>
+    </div>
+  </section>
+
+  <section class="sg-section" id="cards">
+    <h2>Vehicle cards</h2><p class="muted">Line-art on a tinted card when there's no photo. Lift 2 px on hover. Tap the compare button: the thumbnail arcs into the tray.</p>
+    <div class="cards cols-3">{{template "vehicle-card" $d.Card}}{{template "vehicle-card" $d.Card2}}
+      <div class="vcard"><div class="vcard-media tint-car">{{art "car"}}</div><div class="vcard-body"><b>Line-art set</b><div class="row-wrap" style="margin-top:8px">
+        <span class="tray-thumb tint-scooter" style="margin:0;width:56px;height:56px">{{art "scooter"}}</span><span class="tray-thumb tint-bike" style="margin:0;width:56px;height:56px">{{art "bike"}}</span><span class="tray-thumb tint-car" style="margin:0;width:56px;height:56px">{{art "car"}}</span><span class="tray-thumb tint-ev-car" style="margin:0;width:56px;height:56px">{{art "ev-car"}}</span><span class="tray-thumb tint-ev-scooter" style="margin:0;width:56px;height:56px">{{art "ev-scooter"}}</span><span class="tray-thumb tint-cycle" style="margin:0;width:56px;height:56px">{{art "cycle"}}</span>
+      </div></div></div>
+    </div>
+  </section>
+
+  <section class="sg-section" id="price">
+    <h2>Price box, odometer and bill</h2><p class="muted">Totals roll digit by digit like a car odometer: 240 ms per digit, 20 ms stagger.</p>
+    <div class="sg-grid">
+      <div class="pricebox" style="position:static">
+        <div class="pricebox-total"><span class="odo" id="odo-sg" data-odo="{{rupees $d.Quote.Total}}">{{rupees $d.Quote.Total}}</span><span class="muted">total</span>{{template "tip" "Rent, fees and taxes for your dates. Deposit shown separately"}}</div>
+        <p class="pricebox-deposit">+ {{rupees $d.Quote.Deposit}} refundable deposit {{template "tip" "Held during the trip and returned after inspection"}}</p>
+        <div class="row-wrap"><button class="btn btn-secondary btn-sm" data-demo="odo" data-target="odo-sg">Roll to a new total</button></div>
+      </div>
+      <div class="card">{{template "bill" $d.Quote.Lines}}</div>
+    </div>
+  </section>
+
+  <section class="sg-section" id="overlays">
+    <h2>Sheets, dialogs and toasts</h2><p class="muted">Bottom sheets drag to dismiss on phones and centre on desktop. Toasts slide up, with Undo.</p>
+    <div class="row-wrap">
+      <button class="btn btn-secondary" data-sheet-open="sg-sheet">Open a bottom sheet</button>
+      <button class="btn btn-secondary" data-sheet-open="sg-dialog">Open a dialog</button>
+      <button class="btn btn-secondary" data-demo="toast">Show a toast</button>
+      <button class="btn btn-secondary" data-demo="toast-undo">Toast with Undo</button>
+      <button class="btn btn-secondary" data-demo="loader">Wheel loader (2 s)</button>
+      <span class="row small">Tooltip {{template "tip" "Free kilometres included; extra km cost ₹3 each"}}</span>
+    </div>
+  </section>
+
+  <section class="sg-section" id="states">
+    <h2>Loading and empty states</h2><p class="muted">Skeletons pulse while results load. Empty states always offer a way forward.</p>
+    <div class="sg-grid">
+      <div class="skeleton" aria-hidden="true"><div class="skel skel-media"></div><div class="skel-lines"><div class="skel skel-line w-60"></div><div class="skel skel-line w-80"></div><div class="skel skel-line tall"></div></div></div>
+      <div class="card">{{template "empty" (dict "Art" "scooter" "Title" "No trips yet. Where to first?" "URL" "#states" "Label" "Find a ride")}}</div>
+    </div>
+  </section>
+
+  <section class="sg-section" id="trip">
+    <h2>Status line and Deposit Tracker</h2><p class="muted">The road paints itself between steps; the current step pulses. The coin travels Held → Inspection → Released → Credited and the amount counts down for deductions.</p>
+    <div class="stack">
+      <div class="card stack">
+        <ol class="statusline" data-statusline data-step="3" data-sg-status aria-label="Demo trip progress">
+          {{range $i, $label := stepLabels}}{{$n := add $i 1}}<li class="sl-step{{if lt $n 3}} is-done{{else if eq $n 3}} is-done is-current{{end}}"><span class="sl-dot">{{icon "check"}}</span><span class="sl-label">{{$label}}</span>{{if lt $n 6}}<span class="sl-line"><span class="sl-fill" {{if ge $n 3}}style="transform:scaleX(0)"{{end}}></span></span>{{end}}</li>{{end}}
+        </ol>
+        <div class="row-wrap"><button class="btn btn-secondary btn-sm" data-demo="status-prev">Back a step</button><button class="btn btn-secondary btn-sm" data-demo="status-next">Next step</button></div>
+      </div>
+      <div class="banner tone-warn"><span class="pulse-dot"></span><div><b>Waiting for the shop, usually under 15 min</b>Shown before step 1 when instant book is off.</div></div>
+      {{template "deposit-tracker" $d.Deposit}}
+      <div><button class="btn btn-secondary btn-sm" data-demo="deposit-replay">Replay the coin journey</button></div>
+    </div>
+  </section>
+
+  <section class="sg-section" id="photos">
+    <h2>Proof photos</h2><p class="muted">Cars walk around 8 angles plus the odometer and fuel gauge; two-wheelers 4 angles plus the odometer. Each photo fills its zone in teal; all of them unlock the swipe. The real flow uses the full-screen camera on <a class="link" href="/trips">a ready trip</a>.</p>
+    <div class="checkin">
+      <div class="card">{{template "silhouette" (dict "Car" true)}}</div>
+      <div class="stack-3">
+        <div class="row-wrap">
+          <button class="btn btn-secondary btn-sm" data-demo="angle" data-angle="front">Fill front</button>
+          <button class="btn btn-secondary btn-sm" data-demo="angle" data-angle="left">Fill left</button>
+          <button class="btn btn-secondary btn-sm" data-demo="angle" data-angle="right">Fill right</button>
+          <button class="btn btn-secondary btn-sm" data-demo="angle" data-angle="rear">Fill rear</button><button class="btn btn-secondary btn-sm" data-demo="angle" data-angle="front_left">Fill front left</button><button class="btn btn-secondary btn-sm" data-demo="angle" data-angle="rear_right">Fill rear right</button>
+          <button class="btn btn-ghost btn-sm" data-demo="angle-reset">Reset</button>
+        </div>
+        <ul class="photogrid" role="list">
+          <li><figure class="tint-scooter missing">{{art "scooter"}}<figcaption>Front · 9:05 am</figcaption></figure></li>
+          <li><figure class="tint-bike missing">{{art "bike"}}<figcaption>Back · 9:06 am</figcaption></figure></li>
+          <li><figure class="missing">Left side</figure></li>
+          <li><figure class="missing">Right side</figure></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="sg-section" id="compare-photos">
+    <h2>Before / after wipe</h2><p class="muted">Pickup and return photos of the same angle, stacked. Drag the slider (or use the arrow keys) to wipe between them.</p>
+    <div class="sg-grid">
+      <div class="pc-item">
+        <div class="pc-head"><b>Front left</b><span class="tiny muted">Pickup Tue 20 Oct, 9:05 am · Return Thu 22 Oct, 8:40 am</span></div>
+        <div class="pc-wipe" data-wipe>
+          <span class="pc-layer tint-car">{{art "car"}}</span>
+          <span class="pc-layer pc-after tint-ev-car">{{art "ev-car"}}</span>
+          <span class="pc-tag pc-tag-before">Pickup</span><span class="pc-tag pc-tag-after">Return</span>
+          <span class="pc-handle" aria-hidden="true">{{icon "arrow-right-left" "sm"}}</span>
+          <input class="pc-range" type="range" min="0" max="100" value="50" aria-label="Wipe between pickup and return, demo">
+        </div>
+      </div>
+      <div class="card stack-3">
+        <b>Help popovers</b>
+        <p class="small muted">Every term from the tooltip table gets a "?" that opens on tap, click or Enter, and closes on Esc or a tap outside. Never hover-only.</p>
+        <div class="stack-2 small">
+          <span class="row">Total {{template "tip" "Rent, fees and taxes for your dates. Deposit shown separately"}}</span>
+          <span class="row">Refundable deposit {{template "tip" "Held during the trip and returned after inspection"}}</span>
+          <span class="row">Late fee {{template "tip" "Charged per hour after your return time, after 30 min grace"}}</span>
+          <span class="row">Proof photos {{template "tip" "Photos are timestamped so nobody can blame you later"}}</span>
+        </div>
+      </div>
+      <div class="pass" style="max-width:340px">
+        <div class="pass-head"><span class="row">{{template "brand-mark"}}<span><b>Pickup Pass</b><span class="tiny pass-sub">Abu Riders</span></span></span><span class="chip chip-status tone-good">{{icon "circle-check" "sm"}}Confirmed</span></div>
+        <div class="pass-hero"><div><p class="pass-label">Booking code</p><p class="pass-code">SAR-7K2QX</p><p class="small pass-when">Wed 21 Oct · 9 am</p></div><div class="pass-qr">{{qr "SAR-7K2QX"}}</div></div>
+        <div class="pass-perf" aria-hidden="true"></div>
+        <div class="pass-body"><p class="tiny muted">A wallet pass: perforated divider, big code in tabular numerals, a decorative pattern generated from the code.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sg-section" id="dates">
+    <h2>Date range picker and calendar</h2><p class="muted">Pick a start, then an end: the range fills as one sliding pill. Booked days are struck through.</p>
+    <div class="sg-grid">
+      <form class="card stack" data-demo-form>{{template "drp" $d.DRP}}<p class="small muted">Values travel as IST wall-clock, e.g. <span class="mono">2026-10-21T09:00</span>.</p></form>
+      <div class="card">{{template "cal-month" $d.Cal}}</div>
+    </div>
+  </section>
+
+  <section class="sg-section" id="swipe">
+    <h2>Swipe to confirm</h2><p class="muted">The thumb follows your finger and springs back if released early. Keyboard: focus it and hold Enter for 1 s.</p>
+    <div style="max-width:420px" class="stack-2">
+      <div class="swipe" data-swipe data-demo-swipe aria-disabled="false" data-done-label="Trip started (demo)">
+        <div class="swipe-fill"></div><span class="swipe-label">Swipe to start trip</span>
+        <button type="button" class="swipe-thumb" aria-label="Swipe to start trip. Or hold Enter for one second.">{{icon "arrow-right"}}</button>
+      </div>
+      <button class="btn btn-ghost btn-sm" data-demo="swipe-reset">Reset</button>
+    </div>
+  </section>
+
+  <section class="sg-section" id="data">
+    <h2>Tabs and tables</h2>
+    <nav class="tabs" aria-label="Demo tabs"><a class="tab" href="#data" aria-current="page">Upcoming <span class="tab-count">3</span></a><a class="tab" href="#data">Active <span class="tab-count">1</span></a><a class="tab" href="#data">Past <span class="tab-count">4</span></a></nav>
+    <div class="table-wrap" style="margin-top:16px"><table class="table">
+      <thead><tr><th>Code</th><th>Vehicle</th><th>Status</th><th class="num">Total</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">SAR-7K2QX</td><td>Honda Activa 6G</td><td><span class="chip chip-status tone-good">{{icon "circle-check" "sm"}}Confirmed</span></td><td class="num">₹1,062</td></tr>
+        <tr><td class="mono">SAR-M4TZ9</td><td>Royal Enfield Classic 350</td><td><span class="chip chip-status tone-road">{{icon "route" "sm"}}On trip</span></td><td class="num">₹2,124</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section class="sg-section" id="map">
+    <h2>Map view</h2><p class="muted">Leaflet with price pins. Tiles follow the theme.</p>
+    <div class="mini-map" style="height:300px" data-map data-pins="{{$d.Pins}}"></div>
+  </section>
+
+  <section class="sg-section" id="motion">
+    <h2>Motion</h2><p class="muted">Fast 180 ms · base 260 ms · slow 400 ms · hero 600 ms. Only transform and opacity animate. With reduced motion, everything becomes a 120 ms fade.</p>
+    <div class="sg-grid">
+      <div class="card stack-3"><b>Pickup Pass reveal</b><p class="small muted">Rises and flips once, the wheel turns once, a 15 ms buzz. No confetti.</p>
+        <div class="pass-wrap"><div class="pass" data-sg-pass style="max-width:280px"><div class="pass-head"><span class="row">{{template "brand-mark"}}<b>Pickup Pass</b></span></div><div class="pass-code mono" style="font-size:28px;padding-bottom:20px">SAR-7K2QX</div></div></div>
+        <button class="btn btn-secondary btn-sm" data-demo="pass">Replay reveal</button></div>
+      <div class="card stack-3"><b>Calendar conflict</b><p class="small muted">A booking bar shakes 3 times and snaps back when you try to block over it.</p>
+        <div style="position:relative;height:48px"><span class="pcal-bar" style="left:0;right:0;width:auto" data-sg-bar><b>Riya · Confirmed</b>Wed 21 Oct → Fri 23 Oct</span></div>
+        <button class="btn btn-secondary btn-sm" data-demo="shake">Shake it</button></div>
+      <div class="card stack-3"><b>Wheel loader</b><p class="small muted">Replaces spinners on any wait longer than 300 ms.</p><span class="wheel-loader" style="margin:auto">{{wheel}}<span class="road"></span></span></div>
+    </div>
+  </section>
+</div>
+
+<dialog class="sheet" id="sg-sheet" data-sheet aria-labelledby="sg-sheet-title">
+  <div class="sheet-panel">
+    <div class="sheet-handle" data-sheet-handle></div>
+    <header class="sheet-head"><h2 id="sg-sheet-title">A bottom sheet</h2><button class="icon-btn" type="button" data-sheet-close aria-label="Close">{{icon "x"}}</button></header>
+    <div class="sheet-body stack"><p class="muted">Drag the handle down to dismiss, press Esc, or tap outside.</p>{{template "bill" $d.Quote.Lines}}</div>
+    <footer class="sheet-foot"><button class="btn btn-ghost grow" type="button" data-sheet-close>Close</button><button class="btn btn-primary grow" type="button" data-sheet-close>Done</button></footer>
+  </div>
+</dialog>
+<dialog class="dialog" id="sg-dialog" data-sheet aria-labelledby="sg-dialog-title">
+  <div class="dialog-panel">
+    <h2 id="sg-dialog-title">Compare holds 3. Replace one?</h2>
+    <p class="muted">Dialogs are for one decision. Two buttons, clear words.</p>
+    <div class="dialog-actions"><button class="btn btn-ghost" type="button" data-sheet-close>Keep my 3</button><button class="btn btn-primary" type="button" data-sheet-close>Replace</button></div>
+  </div>
+</dialog>
+{{end}}

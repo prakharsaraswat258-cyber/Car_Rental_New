@@ -1,0 +1,24 @@
+{{define "content"}}
+{{$d := .Data}}{{$b := $d.B}}
+<header class="stack-2" style="margin-bottom:var(--s-6)">
+  <a class="link small" href="/p">{{icon "chevron-left" "sm"}}Today</a>
+  <div class="row-between" style="flex-wrap:wrap">
+    <h1 class="console-title">{{$b.RenterName}}</h1>
+    {{template "status-chip" $b.Status}}
+  </div>
+  <p class="muted">{{$b.VehicleName}} · {{rangeText $b.Start $b.End}} · <span class="mono">{{$b.Code}}</span></p>
+</header>
+<div class="split">
+  <div class="stack-6">
+    <section class="card">{{template "status-line" $b}}</section>
+    <div>{{template "req-card" $b}}</div>
+    {{if $d.Pairs}}<section><h2 class="section-title">{{if $d.Return}}Pickup vs return, angle by angle{{else}}Pickup photos{{end}}</h2>{{template "photo-compare" $d.Pairs}}</section>{{end}}
+    <section class="card"><h2 class="h3" style="margin-bottom:12px">Timeline</h2><ol class="timeline plain" role="list">{{range $d.Events}}<li><div>{{.Note}}<time>{{date .At}}, {{clock .At}}</time></div></li>{{end}}</ol></section>
+  </div>
+  <aside class="stack">
+    <section class="card stack"><h2 class="h3">Bill</h2>{{template "bill" $b.Lines}}</section>
+    <section class="card stack-2"><b>Renter</b><p class="small">{{$b.RenterEmail}}</p>{{if $b.RenterPhone}}<a class="btn btn-secondary btn-sm" href="{{tel $b.RenterPhone}}">{{icon "phone" "sm"}}{{$b.RenterPhone}}</a>{{end}}</section>
+    {{if ge $d.Deposit.Stop 0}}<section class="card"><p class="small muted">Deposit</p><p class="h3">{{rupees $b.DepositHeld}} {{if ge $d.Deposit.Stop 2}}· {{rupees $b.Refund}} refunded{{end}}</p></section>{{end}}
+  </aside>
+</div>
+{{end}}

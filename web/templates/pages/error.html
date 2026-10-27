@@ -1,0 +1,11 @@
+{{define "content"}}
+<section class="container empty error-page">
+  <div class="empty-art lg">{{art "il-broken"}}</div>
+  <h1 class="display">Something broke on our side. Your bookings are safe.</h1>
+  <p>Nothing was charged or changed. Try again in a moment.</p>
+  <div class="row-wrap" style="justify-content:center">
+    <button class="btn btn-primary" type="button" data-reload>{{icon "refresh-cw" "sm"}}Retry</button>
+    <a class="btn btn-secondary" href="/">Back to Explore</a>
+  </div>
+</section>
+{{end}}

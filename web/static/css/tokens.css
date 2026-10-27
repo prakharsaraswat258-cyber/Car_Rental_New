@@ -1,0 +1,215 @@
+/* Saarthi design tokens. Every colour, size and timing comes from here. */
+
+/* ---- Fonts (self-hosted, OFL). latin-ext carries ₹ (U+20B9). ---------- */
+@font-face {
+  font-family: "Inter";
+  src: url("../fonts/inter-latin.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Inter";
+  src: url("../fonts/inter-latin-ext.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329,
+    U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: "Fraunces";
+  src: url("../fonts/fraunces-latin.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Fraunces";
+  src: url("../fonts/fraunces-latin-ext.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329,
+    U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+:root {
+  color-scheme: light;
+
+  /* ---- Colour: light ---------------------------------------------- */
+  --paper: #FAF8F3;
+  --paper-2: #F3F0E8;        /* wells, table stripes, skeleton base */
+  --surface: #FFFFFF;
+  --ink: #1F1D1A;
+  --ink-2: #6B675F;
+  --ink-3: #8E897E;          /* placeholders, disabled — never body text */
+  --line: #E7E3D8;
+  --line-2: #D8D3C6;         /* hover / stronger border */
+
+  --accent: #C2552F;         /* Saffron Clay */
+  --accent-ink: #FFFFFF;     /* text on accent (4.5:1) */
+  --accent-soft: #F7E6DE;
+  --accent-strong: #A9461F;
+
+  --road: #2E6B66;           /* Highway Teal */
+  --road-ink: #FFFFFF;
+  --road-soft: #E1EEEC;
+
+  --good: #2F7D4F;
+  --good-ink: #256B42;       /* good as small text on good-soft (AA) */
+  --good-soft: #E3F1E8;
+  --warn: #B7791F;
+  --warn-ink: #8A5A12;       /* warn as text on paper (AA) */
+  --warn-soft: #F8EDD9;
+  --bad: #B3261E;
+  --bad-soft: #F9E3E1;
+
+  --focus: var(--road);
+  --scrim: rgba(31, 29, 26, 0.38);
+  --shadow-float: 0 18px 40px -18px rgba(31, 29, 26, 0.28), 0 2px 8px rgba(31, 29, 26, 0.06);
+
+  /* tinted card backgrounds behind vehicle line-art */
+  --tint-scooter: #F4E9DF;
+  --tint-bike: #ECE6DA;
+  --tint-car: #E4ECEA;
+  --tint-ev: #E2EDE4;
+  --tint-cycle: #F1ECDD;
+
+  /* ---- Type ------------------------------------------------------- */
+  --font-display: "Fraunces", "Inter", Georgia, "Times New Roman", serif;
+  --font-ui: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", sans-serif;
+  --t-12: 0.75rem;
+  --t-14: 0.875rem;
+  --t-16: 1rem;
+  --t-20: 1.25rem;
+  --t-24: 1.5rem;
+  --t-32: 2rem;
+  --t-48: 3rem;
+
+  /* ---- Space (4 px grid) ----------------------------------------- */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 20px;
+  --s-6: 24px;
+  --s-8: 32px;
+  --s-10: 40px;
+  --s-12: 48px;
+  --s-16: 64px;
+  --s-20: 80px;
+
+  --tap: 44px;               /* minimum tap target */
+  --gutter: 16px;
+  --max: 1200px;
+
+  /* ---- Shape ----------------------------------------------------- */
+  --r-input: 8px;
+  --r-card: 16px;
+  --r-sheet: 24px;
+  --r-pill: 999px;
+
+  /* ---- Motion ---------------------------------------------------- */
+  --dur-fast: 180ms;
+  --dur-base: 260ms;
+  --dur-slow: 400ms;
+  --dur-hero: 600ms;
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+  --ease-enter: cubic-bezier(0.05, 0.7, 0.1, 1);
+  --stagger: 30ms;
+}
+
+@media (min-width: 768px) {
+  :root { --gutter: 24px; }
+}
+@media (min-width: 1200px) {
+  :root { --gutter: 32px; }
+}
+
+/* ---- Colour: dark ------------------------------------------------------
+   Applied when the visitor picked dark, or picked "system" (no attribute)
+   and the OS is dark. */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --paper: #1B1A18;
+  --paper-2: #22211E;
+  --surface: #252420;
+  --ink: #F2EFE7;
+  --ink-2: #A8A397;
+  --ink-3: #7D786D;
+  --line: #3A3833;
+  --line-2: #4A4740;
+  --accent: #E2774F;
+  --accent-ink: #1B1A18;
+  --accent-soft: #3A2A22;
+  --accent-strong: #EC8D69;
+  --road: #5FA39C;
+  --road-ink: #1B1A18;
+  --road-soft: #22322F;
+  --good: #5DB37E;
+  --good-ink: #5DB37E;
+  --good-soft: #213328;
+  --warn: #E0A84B;
+  --warn-ink: #E0A84B;
+  --warn-soft: #3A3020;
+  --bad: #EF6B5E;
+  --bad-soft: #3A2321;
+  --scrim: rgba(0, 0, 0, 0.55);
+  --shadow-float: 0 18px 40px -18px rgba(0, 0, 0, 0.7), 0 2px 8px rgba(0, 0, 0, 0.3);
+  --tint-scooter: #2E2823;
+  --tint-bike: #2B2924;
+  --tint-car: #232B29;
+  --tint-ev: #232B25;
+  --tint-cycle: #2C2A22;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --paper: #1B1A18;
+    --paper-2: #22211E;
+    --surface: #252420;
+    --ink: #F2EFE7;
+    --ink-2: #A8A397;
+    --ink-3: #7D786D;
+    --line: #3A3833;
+    --line-2: #4A4740;
+    --accent: #E2774F;
+    --accent-ink: #1B1A18;
+    --accent-soft: #3A2A22;
+    --accent-strong: #EC8D69;
+    --road: #5FA39C;
+    --road-ink: #1B1A18;
+    --road-soft: #22322F;
+    --good: #5DB37E;
+  --good-ink: #5DB37E;
+    --good-soft: #213328;
+    --warn: #E0A84B;
+    --warn-ink: #E0A84B;
+    --warn-soft: #3A3020;
+    --bad: #EF6B5E;
+    --bad-soft: #3A2321;
+    --scrim: rgba(0, 0, 0, 0.55);
+    --shadow-float: 0 18px 40px -18px rgba(0, 0, 0, 0.7), 0 2px 8px rgba(0, 0, 0, 0.3);
+    --tint-scooter: #2E2823;
+    --tint-bike: #2B2924;
+    --tint-car: #232B29;
+    --tint-ev: #232B25;
+    --tint-cycle: #2C2A22;
+  }
+}
+
+/* ---- Reduced motion: short fades only, no rolling or flying ----------- */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-fast: 120ms;
+    --dur-base: 120ms;
+    --dur-slow: 120ms;
+    --dur-hero: 120ms;
+    --stagger: 0ms;
+  }
+}

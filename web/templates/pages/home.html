@@ -1,0 +1,79 @@
+{{define "content"}}
+{{$d := .Data}}
+<section class="hero container" aria-labelledby="greet">
+  <div class="hero-mark" aria-hidden="true">{{template "brand-mark"}}</div>
+  <h1 id="greet" class="display">Where are you headed?</h1>
+  <p class="lead">Scooters, bikes, cars, EVs and cycles from local shops in Mount Abu and Goa. The price you see is the whole price.</p>
+
+  <div class="hero-ask">
+    <form class="composer composer-lg" action="/ask" method="post" data-composer data-examples="{{json $d.Examples}}" role="search">
+      {{icon "search"}}
+      <div class="composer-field">
+        <label class="sr-only" for="ask-q">Describe the trip like a text: place, dates, vehicle, budget</label>
+        <input id="ask-q" class="composer-input" name="q" type="search" autocomplete="off" enterkeyhint="search" placeholder=" "
+          value="{{if $d.Ask}}{{$d.Ask.Text}}{{end}}" maxlength="200" aria-describedby="ask-hint">
+        <span class="composer-ghost" aria-hidden="true">{{index $d.Examples 0}}</span>
+        <button class="composer-clear icon-btn" type="button" data-composer-clear aria-label="Clear" hidden>{{icon "x" "sm"}}</button>
+      </div>
+      {{template "tip" "Describe the trip like a text: place, dates, vehicle, budget"}}
+      <button class="btn btn-primary" type="submit">{{wheel}}{{icon "arrow-right" "sm"}}<span class="send-label">Search</span></button>
+    </form>
+    <p id="ask-hint" class="sr-only">For example: scooter in Mount Abu tomorrow 9am for 2 days under 800.</p>
+
+    <div class="ask-chips" data-ask-chips aria-live="polite" aria-label="What Saarthi understood">{{if $d.Ask}}{{range $d.Ask.Chips}}<span class="chip chip-ask">{{.Label}}{{if .Assumed}}<span class="chip-assumed">1 day, assumed</span>{{end}}</span>{{end}}{{end}}</div>
+
+    <div class="ask-missing" data-ask-missing {{if not (and $d.Ask $d.Ask.Prompt)}}hidden{{end}} role="status">
+      <p data-ask-title>{{if and $d.Ask $d.Ask.Prompt}}{{$d.Ask.Prompt.Title}}{{end}}</p>
+      <div class="row-wrap" data-ask-options>
+        {{if and $d.Ask $d.Ask.Prompt}}
+          {{range $d.Ask.Prompt.Options}}<form method="post" action="/ask"><input type="hidden" name="q" value="{{$d.Ask.Text}} {{.Append}}"><button class="chip" type="submit">{{.Label}}</button></form>{{end}}
+          <form method="post" action="/ask"><input type="hidden" name="q" value="{{$d.Ask.Text}}"><input type="hidden" name="anyway" value="1"><button class="btn btn-ghost btn-sm" type="submit">Show me everything</button></form>
+        {{end}}
+      </div>
+    </div>
+
+    <div class="row-wrap hero-picks" aria-label="Quick picks">
+      <button class="chip" type="button" data-ask-insert="scooter">{{icon "gauge"}}Scooter</button>
+      <button class="chip" type="button" data-ask-insert="bike">{{icon "bike"}}Bike</button>
+      <button class="chip" type="button" data-ask-insert="car">{{icon "car-front"}}Car</button>
+      <button class="chip" type="button" data-ask-insert="EV">{{icon "zap"}}EV</button>
+      <button class="btn btn-ghost btn-sm" type="button" data-toggle="classic-form" aria-expanded="false" aria-controls="classic-form">{{icon "sliders-horizontal" "sm"}}Classic form</button>
+    </div>
+    <div id="classic-form" hidden>{{template "search-form" $d.Search}}</div>
+  </div>
+</section>
+
+<section class="section container" aria-labelledby="cats">
+  <h2 id="cats" class="section-title">Browse by ride</h2>
+  <ul class="cat-strip plain" role="list">
+    {{range $d.Categories}}
+    <li><a class="cat" href="{{.URL}}">
+      <span class="cat-art tint-{{.Art}}">{{art .Art}}</span>
+      <span class="cat-text"><b>{{.Label}}</b><small>{{.Count}} free to book{{if .From}} · from {{rupees .From}}/day{{end}}</small></span>
+    </a></li>
+    {{end}}
+  </ul>
+</section>
+
+<section class="section container" aria-labelledby="popular">
+  <div class="section-head">
+    <div>
+      <h2 id="popular" class="section-title">Popular near you</h2>
+      <p class="small muted">Best-rated rides in Mount Abu and Goa this month.</p>
+    </div>
+    <a class="link small" href="/search">See all {{icon "arrow-right" "sm"}}</a>
+  </div>
+  <div class="cards-row" data-stagger>
+    {{range $d.Popular}}{{template "vehicle-card" .}}{{end}}
+  </div>
+</section>
+
+<section class="section container" aria-labelledby="how">
+  <h2 id="how" class="section-title">How it works</h2>
+  <ol class="how plain" role="list">
+    <li class="card"><span class="how-n">1</span><div><h3 class="h3">The whole price</h3><p class="small muted">Rent, add-ons and GST in one total. The refundable deposit is shown on its own.</p></div></li>
+    <li class="card"><span class="how-n">2</span><div><h3 class="h3">Proof photos</h3><p class="small muted">A guided walk-around at pickup and return, timestamped, so nobody can blame you for old scratches.</p></div></li>
+    <li class="card"><span class="how-n">3</span><div><h3 class="h3">A deposit you can watch</h3><p class="small muted">Held, inspected, released, credited. Every deduction is itemised.</p></div></li>
+  </ol>
+</section>
+{{end}}

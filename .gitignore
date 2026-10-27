@@ -1,0 +1,21 @@
+# runtime data (SQLite db + uploads) — recreated and reseeded on start
+/data/
+
+# build output
+/saarthi
+/saarthi.exe
+/bin/
+.vercel/
+*.exe
+*.test
+*.out
+*.log
+
+# local environment
+.env
+
+# editors / OS
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store

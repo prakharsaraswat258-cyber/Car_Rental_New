@@ -1,0 +1,17 @@
+{{define "content"}}
+<section class="container empty error-page">
+  <div class="empty-art lg">{{art "il-road-end"}}</div>
+  <h1 class="display">This road doesn't go anywhere</h1>
+  <p>The page you asked for isn't here. It may have moved, or the link has a typo.</p>
+  <form class="composer error-search" action="/ask" method="post" data-composer data-examples="[]" role="search">
+    {{icon "search"}}
+    <div class="composer-field">
+      <label class="sr-only" for="nf-q">Search for a ride</label>
+      <input id="nf-q" class="composer-input" name="q" type="search" autocomplete="off" placeholder=" " maxlength="200">
+      <span class="composer-ghost" aria-hidden="true">Search for a ride: place, dates, vehicle</span>
+    </div>
+    <button class="btn btn-primary" type="submit">{{wheel}}<span>Search</span></button>
+  </form>
+  <a class="link small" href="/">Or go back to Explore</a>
+</section>
+{{end}}

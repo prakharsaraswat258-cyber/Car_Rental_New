@@ -1,0 +1,7 @@
+# Keep LF everywhere (gofmt output, vendored files byte-for-byte)
+* text=auto eol=lf
+
+*.woff2 binary
+*.png   binary
+*.jpg   binary
+*.ico   binary

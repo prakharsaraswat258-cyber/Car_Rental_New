@@ -1,0 +1,109 @@
+{{define "content"}}
+{{$d := .Data}}{{$v := $d.V}}
+<div class="container" style="padding-top:var(--s-5)">
+  <nav class="small muted row" aria-label="Breadcrumb" style="margin-bottom:var(--s-4)">
+    <a class="link" href="/search?city={{$v.CitySlug}}">{{icon "chevron-left" "sm"}}{{$v.CityName}}</a>
+    <span>·</span><span>{{typeLabel $v.Type}}</span>
+  </nav>
+  <div class="split">
+    <div class="stack-8">
+      <section class="gallery" data-gallery aria-label="Photos of the {{$v.Name}}">
+        <div class="gallery-grid" data-gallery-track>
+          {{range $i, $g := $d.Gallery}}
+          <button type="button" class="gallery-item tint-{{$v.Art}}{{if eq $i 0}} is-hero{{end}}" data-gallery-open="{{$i}}"
+            aria-label="Open {{lower $g.Label}} full screen"{{if eq $i 0}} style="view-transition-name: v-{{$v.ID}}"{{end}}>
+            {{if $g.Photo}}<img class="fade-img" src="{{$g.Photo}}" alt="{{$g.Label}}" width="1200" height="750" {{if gt $i 0}}loading="lazy"{{end}} decoding="async">
+            {{else}}<span class="gallery-art{{if $g.Mirror}} is-mirror{{end}}{{if $g.Turn}} is-turn{{end}}">{{art $g.Art}}</span>{{end}}
+            {{if eq $i 0}}<span class="gallery-count tiny">{{icon "image" "sm"}}{{len $d.Gallery}}</span>{{end}}
+          </button>
+          {{end}}
+        </div>
+        <div class="gallery-dots" aria-hidden="true">{{range $i, $g := $d.Gallery}}<span{{if eq $i 0}} class="is-on"{{end}}></span>{{end}}</div>
+        <form class="vcard-compare" method="post" action="/compare/{{$v.ID}}" data-compare-form>
+          <button class="icon-btn on-media" type="submit" aria-pressed="{{if $d.InCompare}}true{{else}}false{{end}}" data-compare="{{$v.ID}}" aria-label="Compare {{$v.Name}}" title="Compare">{{icon "git-compare"}}</button>
+        </form>
+        {{if not $v.Photos}}<p class="tiny muted gallery-note">Line drawings until {{$v.ShopName}} adds photos.</p>{{end}}
+      </section>
+
+      <dialog class="lightbox" id="lightbox" data-lightbox aria-label="Photos of the {{$v.Name}}">
+        <div class="lb-top"><span class="small" data-lb-count aria-live="polite"></span><button class="icon-btn on-media" type="button" data-lb-close aria-label="Close">{{icon "x"}}</button></div>
+        <div class="lb-stage" data-lb-stage>
+          {{range $i, $g := $d.Gallery}}
+          <figure class="lb-slide tint-{{$v.Art}}" data-lb-slide="{{$i}}"{{if gt $i 0}} hidden{{end}}>
+            {{if $g.Photo}}<img src="{{$g.Photo}}" alt="{{$g.Label}}" width="1600" height="1000" loading="lazy" decoding="async">
+            {{else}}<span class="gallery-art{{if $g.Mirror}} is-mirror{{end}}{{if $g.Turn}} is-turn{{end}}">{{art $g.Art}}</span>{{end}}
+            <figcaption>{{$g.Label}}</figcaption>
+          </figure>
+          {{end}}
+        </div>
+        <button class="lb-nav lb-prev icon-btn on-media" type="button" data-lb-prev aria-label="Previous photo">{{icon "chevron-left"}}</button>
+        <button class="lb-nav lb-next icon-btn on-media" type="button" data-lb-next aria-label="Next photo">{{icon "chevron-right"}}</button>
+        <p class="lb-hint tiny">Swipe, use the arrow keys, or pull down to close.</p>
+      </dialog>
+
+      <header class="detail-title stack-2">
+        <div class="row-wrap">
+          <span class="rating">{{icon "star"}}{{$v.RatingText}}{{if $v.RatingCount}} <span class="muted">· {{$v.RatingCount}} trips rated</span>{{end}}</span>
+          {{if not $v.InstantBook}}<span class="chip chip-status tone-warn">{{icon "hourglass" "sm"}}The shop confirms this one</span>{{else}}<span class="chip chip-status tone-good">{{icon "zap" "sm"}}Instant book</span>{{end}}
+          {{if not $v.Searchable}}<span class="chip chip-status tone-muted">{{icon "eye-off" "sm"}}Not visible to renters</span>{{end}}
+        </div>
+        <h1 class="display">{{$v.Name}}{{if $v.Year}} <span class="muted" style="font-size:.6em">{{$v.Year}}</span>{{end}}</h1>
+        <p class="muted">{{$v.ShopName}} · {{$v.Place}}</p>
+        {{if $v.Description}}<p class="lead" style="font-size:var(--t-16);color:var(--ink)">{{$v.Description}}</p>{{end}}
+      </header>
+
+      <section aria-labelledby="specs-h">
+        <h2 id="specs-h" class="section-title">Specs</h2>
+        <div class="specs">
+          <div class="spec">{{icon "gauge"}}<b>{{typeLabel $v.Type}}</b><span>Type</span></div>
+          <div class="spec">{{icon "armchair"}}<b>{{$v.Seats}}</b><span>{{if eq $v.Seats 1}}Seat{{else}}Seats{{end}}</span></div>
+          <div class="spec">{{if eq $v.Fuel "electric"}}{{icon "battery-charging"}}{{else}}{{icon "fuel"}}{{end}}<b>{{if eq $v.Fuel "none"}}Pedal{{else if eq $v.Fuel "electric"}}Electric{{else if eq $v.Fuel "diesel"}}Diesel{{else}}Petrol{{end}}</b><span>Fuel</span></div>
+          <div class="spec">{{icon "cog"}}<b>{{if eq $v.Trans "automatic"}}Automatic{{else if eq $v.Trans "manual"}}Manual{{else}}—{{end}}</b><span>Gears</span></div>
+          <div class="spec">{{icon "route"}}<b>{{if $v.KmPerDay}}{{grouped $v.KmPerDay}} km{{else}}Unlimited{{end}}</b><span>Free a day {{if $v.KmPerDay}}{{template "tip" (printf "Free kilometres included; extra km cost %s each" (rupees $v.ExtraKm))}}{{end}}</span></div>
+          <div class="spec">{{icon "clock"}}<b>{{rupees $v.Hourly}}/h</b><span>{{rupees $v.Daily}} a day cap</span></div>
+          <div class="spec">{{icon "shield-check"}}<b>{{rupees $v.Deposit}}</b><span>Refundable deposit</span></div>
+          <div class="spec">{{icon "timer"}}<b>{{rupees $v.LateFee}}/h</b><span>Late fee {{template "tip" "Charged per hour after your return time, after 30 min grace"}}</span></div>
+        </div>
+      </section>
+
+      <section aria-labelledby="incl-h">
+        <h2 id="incl-h" class="section-title">What's included</h2>
+        <ul class="included plain" role="list">{{range $d.Included}}<li>{{icon "circle-check"}}<span>{{.}}</span></li>{{end}}</ul>
+      </section>
+
+      <section aria-labelledby="rules-h">
+        <h2 id="rules-h" class="section-title">The rules, in plain words</h2>
+        <ul class="rules plain card" role="list">{{range $d.Rules}}<li>{{icon .Icon}}<span>{{.Text}}{{if .Tip}} {{template "tip" .Tip}}{{end}}</span></li>{{end}}</ul>
+      </section>
+
+      <section aria-labelledby="avail-h">
+        <h2 id="avail-h" class="section-title">Availability</h2>
+        <div class="card">{{template "cal-month" $d.Cal}}</div>
+      </section>
+
+      <section aria-labelledby="shop-h" class="card shop-card">
+        <h2 id="shop-h" class="sr-only">The shop</h2>
+        <div class="row">
+          <span class="shop-logo">{{initial $v.ShopName}}</span>
+          <div class="grow"><a class="strong" href="/s/{{$v.ShopSlug}}">{{$v.ShopName}}</a><p class="small muted">{{$v.ShopAddress}}</p></div>
+          <a class="btn btn-ghost btn-sm" href="/s/{{$v.ShopSlug}}">All their rides {{icon "arrow-right" "sm"}}</a>
+        </div>
+        <div class="mini-map" data-map data-pins="{{$d.Map}}" data-static aria-label="Map showing {{$v.ShopName}}"></div>
+        <div class="row-wrap">
+          <a class="btn btn-secondary btn-sm" href="https://wa.me/{{$v.ShopWhatsApp}}?text={{printf "Hi %s, I'm looking at the %s on Saarthi." $v.ShopName $v.Name}}" target="_blank" rel="noopener">{{icon "message-circle" "sm"}}WhatsApp the shop</a>
+          <a class="btn btn-ghost btn-sm" href="{{tel $v.ShopPhone}}">{{icon "phone" "sm"}}{{$v.ShopPhone}}</a>
+        </div>
+      </section>
+
+      {{if $d.Reviews}}
+      <section aria-labelledby="rev-h">
+        <h2 id="rev-h" class="section-title">What renters said</h2>
+        <div class="card">{{range $d.Reviews}}<div class="review"><div class="row-between"><b>{{.Author}}</b><span class="rating">{{icon "star"}}{{.Rating}}</span></div>{{if .Body}}<p class="small" style="margin-top:4px">{{.Body}}</p>{{end}}<p class="tiny muted">{{datefull .CreatedAt}}</p></div>{{end}}</div>
+      </section>
+      {{end}}
+    </div>
+
+    <div>{{template "price-box" $d.Box}}</div>
+  </div>
+</div>
+{{end}}

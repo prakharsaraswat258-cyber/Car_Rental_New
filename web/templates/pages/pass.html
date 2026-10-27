@@ -1,0 +1,59 @@
+{{define "content"}}
+{{$b := .Data.B}}
+<div class="container narrow pass-page" data-pass-page data-code="{{$b.Code}}">
+  {{if .Data.ShowTips}}
+  <section class="card how-pickup" data-tips aria-labelledby="tips-h">
+    <div class="row-between"><h2 id="tips-h" class="h3">How pickup works</h2><button class="icon-btn" type="button" data-tips-dismiss aria-label="Got it, hide this">{{icon "x"}}</button></div>
+    <ol class="steps3 plain" role="list">
+      <li><span class="how-n">1</span><div><b>Show this pass</b><p class="small muted">The shop checks the code and your driving licence.</p></div></li>
+      <li><span class="how-n">2</span><div><b>Walk around with your phone</b><p class="small muted">Saarthi guides each photo, so old scratches are on record.</p></div></li>
+      <li><span class="how-n">3</span><div><b>Swipe to start</b><p class="small muted">The trip starts; your deposit stays held until return.</p></div></li>
+    </ol>
+    <div><button class="btn btn-secondary btn-sm" type="button" data-tips-dismiss>Got it</button></div>
+  </section>
+  {{end}}
+
+  <div class="pass-wrap">
+    <article class="pass{{if eq $b.Status "awaiting_shop"}} is-awaiting{{end}}" {{if .Data.Reveal}}data-pass-reveal{{end}} aria-labelledby="pass-code">
+      <header class="pass-head">
+        <span class="row">{{template "brand-mark"}}<span><b>Pickup Pass</b><span class="tiny pass-sub">{{$b.ShopName}}</span></span></span>
+        {{template "status-chip" $b.Status}}
+      </header>
+      {{if eq $b.Status "awaiting_shop"}}
+      <div class="pass-banner"><div class="banner tone-warn"><span class="pulse-dot"></span><div><b>Waiting for the shop, usually under 15 min</b>This pass works once {{$b.ShopName}} accepts.</div></div></div>
+      {{end}}
+      <div class="pass-hero">
+        <div>
+          <p class="pass-label">Booking code</p>
+          <p class="pass-code" id="pass-code" aria-label="Booking code {{$b.Code}}">{{$b.Code}}</p>
+          <p class="small pass-when">{{date $b.Start}} · {{clock $b.Start}}</p>
+        </div>
+        <div class="pass-qr" title="Decorative pattern; the shop checks the code">{{qr $b.Code}}</div>
+      </div>
+      <div class="pass-vehicle">
+        <div class="media tint-{{$b.Art}}">{{template "media" (dict "Cover" $b.Cover "Art" $b.Art "Name" "")}}</div>
+        <div><h1 class="h3">{{$b.VehicleName}}</h1><p class="small muted">{{if $b.VehicleReg}}{{$b.VehicleReg}} · {{end}}{{$b.ShopName}}</p></div>
+      </div>
+      <div class="pass-perf" aria-hidden="true"></div>
+      <div class="pass-body">
+        <dl class="pass-grid">
+          <div><dt>Pickup</dt><dd>{{date $b.Start}}<br>{{clock $b.Start}}</dd></div>
+          <div><dt>Return</dt><dd>{{date $b.End}}<br>{{clock $b.End}}</dd></div>
+          <div><dt>Total paid</dt><dd class="num">{{rupees $b.Total}}</dd></div>
+          <div><dt>Deposit held</dt><dd class="num">{{rupees $b.Deposit}}<br><span class="tiny muted">refundable</span></dd></div>
+          <div class="span2"><dt>Where</dt><dd>{{$b.ShopAddress}} <a class="link small nowrap" href="{{$b.MapLink}}" target="_blank" rel="noopener">Open map {{icon "external-link" "sm"}}</a></dd></div>
+          <div class="span2"><dt>Bring</dt><dd>{{icon "key-round" "sm"}} Driving licence and one photo ID</dd></div>
+        </dl>
+      </div>
+      <div class="pass-foot">
+        <a class="btn btn-primary btn-block" href="/trips/{{$b.Code}}/pass.ics" download>{{icon "calendar-plus" "sm"}}Add to calendar</a>
+        <div class="row">
+          <a class="btn btn-secondary grow" href="{{$b.WhatsApp}}" target="_blank" rel="noopener">{{icon "message-circle" "sm"}}WhatsApp the shop</a>
+          <a class="btn btn-ghost grow" href="/trips/{{$b.Code}}">Trip details</a>
+        </div>
+        <p class="tiny muted center" data-offline-note hidden>{{icon "circle-check" "sm"}} Saved on this phone. It opens even without signal.</p>
+      </div>
+    </article>
+  </div>
+</div>
+{{end}}

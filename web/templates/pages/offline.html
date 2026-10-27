@@ -1,0 +1,11 @@
+{{define "content"}}
+<section class="container empty error-page">
+  <div class="empty-art lg">{{art "il-offline"}}</div>
+  <h1 class="display">No signal right now</h1>
+  <p>Pickup Passes you've opened before still work. Everything else comes back when you're online.</p>
+  <div class="row-wrap" style="justify-content:center">
+    <a class="btn btn-primary" href="/trips">{{icon "ticket" "sm"}}My trips</a>
+    <button class="btn btn-secondary" type="button" data-reload>{{icon "refresh-cw" "sm"}}Try again</button>
+  </div>
+</section>
+{{end}}

@@ -1,0 +1,58 @@
+{{define "content"}}
+{{$d := .Data}}{{$b := $d.B}}
+<header class="stack-2" style="margin-bottom:var(--s-6)">
+  <a class="link small" href="/p">{{icon "chevron-left" "sm"}}Today</a>
+  <h1 class="console-title">Inspect the return</h1>
+  <p class="muted">{{$b.RenterName}} · {{$b.VehicleName}} · <span class="mono">{{$b.Code}}</span> · returned {{date $b.ReturnedAt}}, {{clock $b.ReturnedAt}}{{if $b.LateBy}} ({{durWords $b.LateBy}} after the due time){{end}}</p>
+</header>
+
+<div class="split">
+  <div class="stack-6">
+    <section class="card stack" aria-labelledby="ph-h">
+      <h2 id="ph-h" class="h3">Pickup vs return, angle by angle</h2>
+      <p class="small muted">Drag each slider to wipe between the two photos.</p>
+      {{if $d.Pairs}}{{template "photo-compare" $d.Pairs}}{{else}}<p class="small muted">No photos were uploaded for this trip.</p>{{end}}
+    </section>
+
+    <form id="inspect-form" class="card stack" method="post" action="/p/bookings/{{$b.ID}}/inspect"
+      hx-post="/p/bookings/{{$b.ID}}/inspect" hx-trigger="input delay:300ms, change, recalc" hx-target="#inspect-summary" hx-swap="outerHTML" data-inspect>
+      <h2 class="h3">Kilometres and time</h2>
+      <div class="form-grid two">
+        <label class="field"><span class="field-label">Odometer at pickup</span><input class="input" value="{{grouped $b.OdoStart}} km" disabled></label>
+        <label class="field"><span class="field-label">Odometer at return</span><span class="input-group"><span class="addon">km</span><input class="input" type="number" name="odo_end" value="{{$d.OdoEnd}}" min="{{$b.OdoStart}}" inputmode="numeric"></span>
+          <span class="field-hint">The renter entered {{grouped $b.OdoEnd}} km. Correct it if the dial says otherwise.</span></label>
+      </div>
+      <p class="small muted">{{grouped $b.KmIncluded}} km were included · extra km {{rupees $b.ExtraKmRate}} each · late fee {{rupees $b.LateFeeRate}}/h after 30 min grace.</p>
+      <div class="row-wrap">
+        <label class="switch"><input type="checkbox" name="waive_km" {{if $d.WaiveKm}}checked{{end}}><span class="switch-track"><span class="switch-thumb"></span></span><span class="small">Waive extra km</span></label>
+        <label class="switch"><input type="checkbox" name="waive_late" {{if $d.WaiveLate}}checked{{end}}><span class="switch-track"><span class="switch-thumb"></span></span><span class="small">Waive late fee</span></label>
+      </div>
+
+      <h2 class="h3" style="margin-top:var(--s-4)">Anything else to deduct?</h2>
+      <p class="small muted">Fuel, damage or cleaning, each with a short note so {{$b.RenterName}} knows why.</p>
+      <div class="ded-rows" data-ded-rows>
+        {{range $d.Manual}}{{template "ded-row" (dict "D" . "Kinds" $d.Kinds)}}{{end}}
+      </div>
+      <template data-ded-template>{{template "ded-row" (dict "D" nil "Kinds" $d.Kinds)}}</template>
+      <div><button class="btn btn-secondary btn-sm" type="button" data-ded-add>{{icon "plus" "sm"}}Add a deduction</button></div>
+    </form>
+  </div>
+
+  <aside class="pricebox" aria-label="Settlement">
+    <h2 class="h3">Settlement</h2>
+    {{template "inspect-summary" $d}}
+    <button class="btn btn-primary btn-block btn-lg" type="submit" form="inspect-form" data-submit-loading-btn>{{wheel}}<span>Release deposit</span></button>
+    <p class="tiny muted center">The renter sees every line above. The rest of the deposit goes back right away.</p>
+  </aside>
+</div>
+{{end}}
+
+{{define "ded-row"}}
+<div class="ded-row">
+  <label class="field"><span class="sr-only">Kind</span>
+    <select class="input" name="kind">{{range .Kinds}}<option value="{{.}}" {{if $.D}}{{if eq $.D.Kind .}}selected{{end}}{{end}}>{{.Label}}</option>{{end}}</select></label>
+  <label class="field"><span class="sr-only">Amount</span><span class="input-group"><span class="addon">₹</span><input class="input" type="number" name="amount" min="0" step="10" inputmode="numeric" placeholder="0" value="{{if .D}}{{.D.Amount.WholeRupees}}{{end}}"></span></label>
+  <label class="field"><span class="sr-only">Note</span><input class="input" name="note" maxlength="120" placeholder="e.g. Half a tank short" value="{{if .D}}{{.D.Note}}{{end}}"></label>
+  <button class="icon-btn" type="button" data-ded-remove aria-label="Remove this deduction">{{icon "trash-2"}}</button>
+</div>
+{{end}}

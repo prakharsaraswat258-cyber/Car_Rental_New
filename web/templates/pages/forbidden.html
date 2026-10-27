@@ -1,0 +1,8 @@
+{{define "content"}}
+<section class="container empty">
+  {{icon "lock" "lg"}}
+  <h1 class="display">This part is for another account</h1>
+  <p>You're logged in{{if .User}} as {{.User.Email}}{{end}}, which can't open this page. Switch accounts to continue.</p>
+  <a class="btn btn-secondary" href="/">Back to Explore</a>
+</section>
+{{end}}

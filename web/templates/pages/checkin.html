@@ -1,0 +1,70 @@
+{{define "content"}}
+{{$d := .Data}}{{$b := $d.B}}
+<div class="container">
+  <header class="page-head stack-2">
+    <a class="link small" href="/trips/{{$b.Code}}">{{icon "chevron-left" "sm"}}{{$b.VehicleName}} · {{$b.Code}}</a>
+    <h1 class="display h2">{{$d.Title}}</h1>
+    <p class="lead" style="font-size:var(--t-16)">{{$d.Lead}} {{template "tip" "Photos are timestamped so nobody can blame you later"}}</p>
+  </header>
+
+  <div class="checkin" data-checkin data-phase="{{$d.Phase}}" data-upload="/trips/{{$b.Code}}/photos">
+    <div class="card checkin-side">
+      {{template "silhouette" $d}}
+      <p class="tiny muted center">Each photo fills its side in teal.</p>
+      <button class="btn btn-primary btn-block btn-lg" type="button" data-camera-open>{{icon "camera" "sm"}}<span data-camera-label>Start the walk-around</span></button>
+      <p class="tiny muted center" data-camera-fallback hidden>Your browser can't open the camera here, so each tile opens your photo picker instead.</p>
+    </div>
+    <div class="stack-6">
+      <ul class="angles plain" role="list" data-angles>
+        {{range $d.Angles}}{{template "angle-tile" .}}{{end}}
+      </ul>
+      <p class="checkin-hint" data-checkin-hint hidden role="status"></p>
+
+      <form id="swipe-form" method="post" action="{{$d.Action}}" class="stack">
+        {{if $d.NeedsOdo}}
+        <label class="field" for="f-odometer">
+          <span class="field-label">Odometer reading</span>
+          <span class="input-group"><span class="addon">km</span><input id="f-odometer" class="input" type="number" inputmode="numeric" name="odometer" required min="{{if $d.OdoMin}}{{$d.OdoMin}}{{else}}1{{end}}" value="{{if $d.Odo}}{{$d.Odo}}{{end}}" placeholder="{{if $d.OdoMin}}At least {{grouped $d.OdoMin}}{{else}}e.g. 12000{{end}}" data-odometer
+            data-msg-required="Add the odometer reading, the number on the dial." data-msg-min="It read {{grouped $d.OdoMin}} km at pickup; the return reading can't be lower."></span>
+          {{if $d.OdoMin}}<span class="field-hint">It read {{grouped $d.OdoMin}} km at pickup.</span>{{end}}
+        </label>
+        {{else}}<input type="hidden" name="odometer" value="0">{{end}}
+        <div class="swipe" data-swipe data-form="swipe-form" aria-disabled="true" data-done-label="{{$d.DoneLabel}}">
+          <div class="swipe-fill"></div>
+          <span class="swipe-label" aria-hidden="true">{{$d.SwipeLabel}}</span>
+          <button type="button" class="swipe-thumb" aria-label="{{$d.SwipeLabel}}. Or hold Enter for one second.">{{icon "arrow-right"}}</button>
+        </div>
+        <p class="swipe-help">Swipe right, or focus the button and hold Enter for 1 second.</p>
+        <button class="sr-only" type="submit" data-swipe-alt>{{if eq $d.Phase "checkin"}}Start trip{{else}}End trip{{end}}</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+{{/* Full-screen guided camera (getUserMedia) with a silhouette per angle. */}}
+<div class="camera" data-camera hidden role="dialog" aria-modal="true" aria-labelledby="cam-title">
+  <video class="cam-video" data-cam-video playsinline muted autoplay></video>
+  <canvas data-cam-canvas hidden></canvas>
+  <img class="cam-review" data-cam-review alt="" hidden>
+  <div class="cam-guide" data-cam-guide aria-hidden="true"></div>
+  <div class="cam-top">
+    <button class="icon-btn on-media" type="button" data-cam-close aria-label="Close camera">{{icon "x"}}</button>
+    <div class="cam-title"><b id="cam-title" data-cam-angle>Front</b><span class="tiny" data-cam-progress>1 of {{len $d.Angles}}</span></div>
+    <span class="cam-spacer"></span>
+  </div>
+  <p class="cam-tip" data-cam-tip role="status" aria-live="polite">Line the vehicle up with the outline.</p>
+  <div class="cam-bar">
+    <button class="btn btn-ghost cam-skip" type="button" data-cam-skip>Skip</button>
+    <button class="cam-shutter" type="button" data-cam-shoot aria-label="Take photo"><span></span></button>
+    <span class="cam-spacer"></span>
+  </div>
+  <div class="cam-bar cam-confirm" data-cam-confirm hidden>
+    <button class="btn btn-secondary" type="button" data-cam-retake>{{icon "rotate-ccw" "sm"}}Retake</button>
+    <button class="btn btn-ghost" type="button" data-cam-anyway hidden>Use anyway</button>
+    <button class="btn btn-primary" type="button" data-cam-use>{{wheel}}<span>Use photo</span></button>
+  </div>
+</div>
+<template data-guide-art="{{$b.Art}}">{{art $b.Art}}</template>
+<template data-guide-art="{{frontArt $b.Art}}">{{art (frontArt $b.Art)}}</template>
+<template data-guide-art="gauge">{{art "gauge"}}</template>
+{{end}}
