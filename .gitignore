@@ -6,6 +6,8 @@
 /saarthi.exe
 /bin/
 .vercel/
+.wrangler/
+node_modules/
 *.exe
 *.test
 *.out

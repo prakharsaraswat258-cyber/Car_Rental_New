@@ -1,0 +1,12 @@
+{
+  "name": "saarthi-cloudflare",
+  "private": true,
+  "description": "Cloudflare Worker + Container wrapper for the Go server (see wrangler.jsonc)",
+  "scripts": {
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "@cloudflare/containers": "^0.3.7",
+    "wrangler": "^4.86.0"
+  }
+}

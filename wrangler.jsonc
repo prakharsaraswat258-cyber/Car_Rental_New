@@ -1,0 +1,23 @@
+// Cloudflare deploy: a small Worker (src/index.js) forwards every request to
+// one container running the Go server from the Dockerfile. One instance only,
+// because the SQLite database lives on that container's disk. The disk is
+// not persistent: when the container restarts, demo data is reseeded.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "saarthi",
+  "main": "src/index.js",
+  "compatibility_date": "2026-10-01",
+  "observability": { "enabled": true },
+  "containers": [
+    {
+      "class_name": "SaarthiContainer",
+      "image": "./Dockerfile",
+      "instance_type": "basic",
+      "max_instances": 1
+    }
+  ],
+  "durable_objects": {
+    "bindings": [{ "name": "SAARTHI", "class_name": "SaarthiContainer" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["SaarthiContainer"] }]
+}
